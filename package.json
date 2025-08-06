@@ -1,0 +1,67 @@
+{
+  "name": "planwise",
+  "version": "1.0.0",
+  "main": "public/main.js",
+  "scripts": {
+    "start": "webpack serve --mode development",
+    "build": "webpack --mode production",
+    "electron": "electron public/main.js",
+    "electron-dev": "cross-env NODE_ENV=development electron public/main.js",
+    "dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && npm run electron-dev\"",
+    "dev-desktop": "concurrently \"npm start\" \"wait-on http://localhost:3000 && npm run electron-dev\" --kill-others-on-fail",
+    "desktop-only": "concurrently \"npm run start -- --open=false\" \"wait-on http://localhost:3000 && npm run electron-dev\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/XUN0024/PlanWise.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/XUN0024/PlanWise/issues"
+  },
+  "homepage": "https://github.com/XUN0024/PlanWise#readme",
+  "description": "",
+  "devDependencies": {
+    "@babel/core": "^7.28.0",
+    "@babel/preset-env": "^7.28.0",
+    "@babel/preset-react": "^7.27.1",
+    "assert": "^2.1.0",
+    "autoprefixer": "^10.4.21",
+    "babel-loader": "^10.0.0",
+    "browserify-zlib": "^0.2.0",
+    "buffer": "^6.0.3",
+    "cross-env": "^10.0.0",
+    "crypto-browserify": "^3.12.1",
+    "css-loader": "^7.1.2",
+    "electron": "^37.2.5",
+    "html-webpack-plugin": "^5.6.3",
+    "https-browserify": "^1.0.0",
+    "os-browserify": "^0.3.0",
+    "path-browserify": "^1.0.1",
+    "postcss": "^8.5.6",
+    "postcss-loader": "^8.1.1",
+    "process": "^0.11.10",
+    "stream-browserify": "^3.0.0",
+    "stream-http": "^3.2.0",
+    "style-loader": "^4.0.0",
+    "tailwindcss": "^3.4.17",
+    "url": "^0.11.4",
+    "wait-on": "^8.0.4",
+    "webpack": "^5.101.0",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.2"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.53.0",
+    "bcryptjs": "^3.0.2",
+    "concurrently": "^9.2.0",
+    "dotenv": "^17.2.1",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-router-dom": "^7.7.1"
+  }
+}

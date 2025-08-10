@@ -69,12 +69,12 @@ const Dashboard = () => {
                 >
                   Expenses
                 </a>
-                <a
-                  href="#"
+                <Link
+                  to="/notes"
                   className="text-gray-500 hover:text-gray-700 px-1 py-4 text-sm font-medium"
                 >
                   Notes
-                </a>
+                </Link>
                 <a
                   href="#"
                   className="text-gray-500 hover:text-gray-700 px-1 py-4 text-sm font-medium"

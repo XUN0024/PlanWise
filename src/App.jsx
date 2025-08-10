@@ -8,7 +8,8 @@ import {
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import LoginPage from "./components/LoginPage";
 import Dashboard from "./components/Dashboard";
-import Tasks from "./components/Tasks";
+import Tasks from "./components/tasks";
+import Notes from "./components/Notes";
 import ErrorBoundary from "./components/ErrorBoundary";
 import "./i18n/index.jsx"; // Initialize i18n
 
@@ -73,6 +74,15 @@ const AppRoutes = () => {
             element={
               <ProtectedRoute>
                 <Tasks />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/notes"
+            element={
+              <ProtectedRoute>
+                <Notes />
               </ProtectedRoute>
             }
           />

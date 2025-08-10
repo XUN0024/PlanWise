@@ -1,9 +1,16 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import LoginPage from './components/LoginPage';
-import Dashboard from './components/Dashboard';
-import ErrorBoundary from './components/ErrorBoundary';
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import LoginPage from "./components/LoginPage";
+import Dashboard from "./components/Dashboard";
+import Tasks from "./components/Tasks";
+import ErrorBoundary from "./components/ErrorBoundary";
+import "./i18n/index.jsx"; // Initialize i18n
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -61,11 +68,17 @@ const AppRoutes = () => {
             }
           />
 
-          {/* Default Route */}
           <Route
-            path="/"
-            element={<Navigate to="/dashboard" replace />}
+            path="/tasks"
+            element={
+              <ProtectedRoute>
+                <Tasks />
+              </ProtectedRoute>
+            }
           />
+
+          {/* Default Route */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </div>
     </Router>

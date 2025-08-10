@@ -1,6 +1,7 @@
 import React from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useTranslation } from "react-i18next";
 import planWiseLogo from "../../assets/PlanWise.png";
 import {
   faTasks,
@@ -20,9 +21,12 @@ import {
   faImage,
   faArrowRight,
 } from "@fortawesome/free-solid-svg-icons";
+import { Link } from "react-router-dom";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
+  const { t } = useTranslation();
 
   const handleSignOut = async () => {
     await signOut();
@@ -47,18 +51,18 @@ const Dashboard = () => {
 
               {/* Navigation */}
               <nav className="hidden md:ml-8 md:flex md:space-x-8">
-                <a
-                  href="#"
+                <Link
+                  to="/dashboard"
                   className="text-blue-600 border-b-2 border-blue-600 px-1 py-4 text-sm font-medium"
                 >
-                  Dashboard
-                </a>
-                <a
-                  href="#"
+                  {t("dashboard")}
+                </Link>
+                <Link
+                  to="/tasks"
                   className="text-gray-500 hover:text-gray-700 px-1 py-4 text-sm font-medium"
                 >
-                  Tasks
-                </a>
+                  {t("tasks")}
+                </Link>
                 <a
                   href="#"
                   className="text-gray-500 hover:text-gray-700 px-1 py-4 text-sm font-medium"
@@ -82,6 +86,7 @@ const Dashboard = () => {
 
             {/* User Menu */}
             <div className="flex items-center space-x-4">
+              <LanguageSwitcher />
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-sm font-medium">
@@ -96,7 +101,7 @@ const Dashboard = () => {
                 onClick={handleSignOut}
                 className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors text-sm"
               >
-                Sign Out
+                {t("signOut")}
               </button>
             </div>
           </div>

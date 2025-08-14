@@ -84,6 +84,19 @@ const Notes = () => {
       id: "n4",
       title: "(3)JSX中，我们使用大括号语法 來識别变量",
       body: "...",
+      points: [
+        { id: "p1", text: "Fix top header spacing (24px vertical rhythm)" },
+        { id: "p2", text: "Align sidebar icons and labels to an 8px grid" },
+        {
+          id: "p3",
+          text: "Adjust padding in the main content area for consistency",
+        },
+      ],
+      attachments: [
+        { id: "a1", type: "file", name: "Spec.pdf", size: "120 KB" },
+        { id: "a2", type: "file", name: "Costs.xlsx", size: "36 KB" },
+        { id: "a3", type: "image", name: "Mock.png", size: "512 KB" },
+      ],
       tags: ["jsx", "cn"],
       color: "#10B981", // emerald-500
       pinned: false,
@@ -123,6 +136,21 @@ const Notes = () => {
     "#EC4899", // pink-500
     "#f4f3f6ff", // violet-500
   ];
+
+  const bodyRef = useRef(null);
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+    const resize = () => {
+      el.style.height = "auto";
+      const max = Math.max(240, window.innerHeight - 320); // 320 可按你的头部/边距调
+      el.style.height = Math.min(el.scrollHeight, max) + "px";
+    };
+    resize();
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, [selectedId, selectedNote?.body]);
+
   const hash = (s = "") => {
     let h = 0;
     for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
@@ -138,6 +166,15 @@ const Notes = () => {
   const [selectedId, setSelectedId] = useState(notes[0]?.id ?? null);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const colorPickerRef = useRef(null);
+
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const titleInputRef = useRef(null);
+  useEffect(() => {
+    if (isEditingTitle) {
+      // Focus input when entering edit mode
+      setTimeout(() => titleInputRef.current?.focus?.(), 0);
+    }
+  }, [isEditingTitle]);
 
   // Close color picker when clicking outside
   useEffect(() => {
@@ -206,8 +243,14 @@ const Notes = () => {
     );
   };
 
+  const handleUpdateSelectedNote = (updates) => {
+    setNotes((prev) =>
+      prev.map((n) => (n.id === selectedId ? { ...n, ...updates } : n))
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -283,7 +326,7 @@ const Notes = () => {
       </header>
 
       {/* Content */}
-      <div className="content-wrapper flex items-start gap-6 px-4 sm:px-6 lg:px-8">
+      <div className="content-wrapper flex items-start gap-6 px-4 sm:px-6 lg:px-8 min-w-0">
         {/* Sidebar */}
         <aside>
           <NotesSidebar
@@ -294,7 +337,7 @@ const Notes = () => {
           />
         </aside>
         {/* Main content: selected note full details */}
-        <main className="flex-1 py-6">
+        <main className="flex-1 min-w-0 py-6">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             {/* Color banner (matches the sticky note color) */}
             <div
@@ -304,16 +347,44 @@ const Notes = () => {
               }}
             />
             {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between">
-              <div>
-                <h1 className="text-xl font-semibold text-gray-900">
-                  {selectedNote?.title}
+            <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between min-w-0">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl font-semibold text-gray-900 flex items-center gap-2 overflow-hidden flex-1 min-w-0">
+                  {isEditingTitle ? (
+                    <input
+                      ref={titleInputRef}
+                      className="w-full min-w-0 max-w-full border-b border-gray-300 focus:border-blue-500 outline-none bg-transparent text-xl font-semibold truncate"
+                      defaultValue={selectedNote?.title ?? ""}
+                      onBlur={(e) => {
+                        handleUpdateSelectedNote({ title: e.target.value });
+                        setIsEditingTitle(false);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.currentTarget.blur();
+                        } else if (e.key === "Escape") {
+                          setIsEditingTitle(false);
+                        }
+                      }}
+                    />
+                  ) : (
+                    <>
+                      <span className="block max-w-full truncate">
+                        {selectedNote?.title}
+                      </span>
+                      <FontAwesomeIcon
+                        icon={faEdit}
+                        className="w-3 h-3 ml-2 text-gray-400 cursor-pointer"
+                        onClick={() => setIsEditingTitle(true)}
+                      />
+                    </>
+                  )}
                 </h1>
                 <div className="mt-1 text-xs text-gray-500">
                   {selectedNote?.updatedAt}
                 </div>
               </div>
-              <div className="relative inline-flex items-center gap-2">
+              <div className="relative inline-flex items-center gap-2 shrink-0">
                 {/* Eyedropper with hover color picker */}
                 <div className="relative" ref={colorPickerRef}>
                   <button
@@ -384,7 +455,23 @@ const Notes = () => {
 
               {/* Content */}
               <div className="mt-4 space-y-3 text-sm text-gray-700 leading-relaxed">
-                <p>{selectedNote?.body}</p>
+                {/* <p>{selectedNote?.body}</p> */}
+                <textarea
+                  value={selectedNote?.body ?? ""}
+                  onChange={(e) =>
+                    handleUpdateSelectedNote({ body: e.target.value })
+                  }
+                  onInput={(e) => {
+                    e.currentTarget.style.height = "auto";
+                    const max = window.innerHeight * 0.35; //good prac
+                    e.currentTarget.style.height =
+                      Math.min(e.currentTarget.scrollHeight, max) + "px";
+                  }}
+                  className="w-full bg-transparent border-0 text-sm text-gray-700 focus:ring-0 focus:outline-none resize-none
+                  min-h-[30vh]
+                  overflow-auto"
+                  rows={4}
+                />
                 <ul className="space-y-2">
                   {(selectedNote?.points ?? []).map((pt) => (
                     <li key={pt.id} className="flex items-start">
@@ -404,7 +491,7 @@ const Notes = () => {
               </div>
 
               {/* Attachments */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
                 {(selectedNote?.attachments ?? []).map((f) => (
                   <div
                     key={f.id}

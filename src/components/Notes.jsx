@@ -18,14 +18,18 @@ import {
   faEdit,
   faFilePdf,
   faFileExcel,
+  faTimes,
   faImage,
   faEyeDropper,
   faStar,
   faArrowRight,
+  faTags,
+  faListCheck,
 } from "@fortawesome/free-solid-svg-icons";
 import { Link } from "react-router-dom";
 import LanguageSwitcher from "./LanguageSwitcher";
 import NotesSidebar from "./NotesSidebar";
+import TagManagerModal from "./TagManagerModal";
 
 const Notes = () => {
   const { user, signOut } = useAuth();
@@ -249,6 +253,69 @@ const Notes = () => {
     );
   };
 
+  const handleRemoveTag = (tag) => {
+    handleUpdateSelectedNote({
+      tags: (selectedNote?.tags ?? []).filter((t) => t !== tag),
+    });
+  };
+
+  const [showTagManager, setShowTagManager] = useState(false);
+  const handleToggleManageTags = () => {
+    setShowTagManager(!showTagManager);
+  };
+
+  const handleCheckPoint = (id) => {
+    handleUpdateSelectedNote({
+      points: (selectedNote?.points ?? []).map((p) =>
+        p.id === id ? { ...p, done: !p.done } : p
+      ),
+    });
+  };
+
+  // Checklist editing state for note points
+  const [editingPointId, setEditingPointId] = useState(null);
+  const [editingPointText, setEditingPointText] = useState("");
+
+  const startEditPoint = (pt) => {
+    setEditingPointId(pt.id);
+    setEditingPointText(pt.text ?? "");
+  };
+  const saveEditPoint = () => {
+    if (!editingPointId) return;
+    handleUpdateSelectedNote({
+      points: (selectedNote?.points ?? []).map((p) =>
+        p.id === editingPointId ? { ...p, text: editingPointText } : p
+      ),
+    });
+    setEditingPointId(null);
+    setEditingPointText("");
+  };
+  const cancelEditPoint = () => {
+    setEditingPointId(null);
+    setEditingPointText("");
+  };
+
+  // Reset editing when switching notes
+  useEffect(() => {
+    setEditingPointId(null);
+    setEditingPointText("");
+  }, [selectedId]);
+
+  const handleRemovePoint = (id) => {
+    handleUpdateSelectedNote({
+      points: (selectedNote?.points ?? []).filter((p) => p.id !== id),
+    });
+  };
+
+  const handleAddPoint = () => {
+    handleUpdateSelectedNote({
+      points: [
+        ...(selectedNote?.points ?? []),
+        { id: `p${Date.now()}`, text: "", done: false },
+      ],
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       {/* Header */}
@@ -427,6 +494,26 @@ const Notes = () => {
                   )}
                 </div>
 
+                {/* Manage Tags */}
+                <button
+                  className="px-3 py-1.5 rounded-md border border-gray-200 text-sm text-gray-700 hover:bg-gray-50"
+                  aria-label="Manage Tags"
+                  title="Manage Tags"
+                  onClick={handleToggleManageTags}
+                >
+                  <FontAwesomeIcon icon={faTags} className="w-3 h-3" />
+                </button>
+
+                {/* Add Point to list */}
+                <button
+                  className="px-3 py-1.5 rounded-md border border-gray-200 text-sm text-gray-700 hover:bg-gray-50"
+                  aria-label="Add List"
+                  title="Add List"
+                  onClick={handleAddPoint}
+                >
+                  <FontAwesomeIcon icon={faListCheck} className="w-3 h-3" />
+                </button>
+
                 {/* Star */}
                 <button
                   className="px-3 py-1.5 rounded-md border border-gray-200 text-sm hover:bg-gray-50"
@@ -444,12 +531,19 @@ const Notes = () => {
               {/* Tags */}
               <div className="flex flex-wrap gap-2">
                 {(selectedNote?.tags ?? []).map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs"
-                  >
-                    #{tag}
-                  </span>
+                  <div className="flex items-center gap-2 rounded-full bg-gray-100 text-gray-600 text-xs px-2 py-0.5">
+                    <span key={tag} className="inline-flex items-center ">
+                      #{tag}
+                    </span>
+                    <FontAwesomeIcon
+                      icon={faTimes}
+                      className="w-3 h-3
+                    text-gray-400 hover:text-gray-600 cursor-pointer animated all duration-300"
+                      onMouseOver={(e) => (e.currentTarget.style.color = "red")}
+                      onMouseOut={(e) => (e.currentTarget.style.color = "grey")}
+                      onClick={() => handleRemoveTag(tag)}
+                    />
+                  </div>
                 ))}
               </div>
 
@@ -473,20 +567,63 @@ const Notes = () => {
                   rows={4}
                 />
                 <ul className="space-y-2">
-                  {(selectedNote?.points ?? []).map((pt) => (
-                    <li key={pt.id} className="flex items-start">
-                      <span
-                        className={`w-4 h-4 mt-0.5 rounded border-2 border-gray-300 mr-2 flex items-center justify-center ${
-                          pt.done ? "bg-blue-500 text-white" : ""
-                        }`}
-                      >
-                        {pt.done && (
-                          <FontAwesomeIcon icon={faCheck} className="w-3 h-3" />
+                  {(selectedNote?.points ?? []).map((pt) => {
+                    const isEditing = editingPointId === pt.id;
+                    return (
+                      <li key={pt.id} className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleCheckPoint(pt.id)}
+                          className={`w-4 h-4 rounded flex items-center justify-center border-2 transition-colors ${
+                            pt.done
+                              ? "border-blue-500 bg-blue-500 text-white"
+                              : "border-gray-300 bg-white text-gray-400"
+                          }`}
+                          aria-pressed={!!pt.done}
+                        >
+                          {pt.done && (
+                            <FontAwesomeIcon
+                              icon={faCheck}
+                              className="w-2.5 h-2.5"
+                            />
+                          )}
+                        </button>
+
+                        {isEditing ? (
+                          <input
+                            value={editingPointText}
+                            onChange={(e) =>
+                              setEditingPointText(e.target.value)
+                            }
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") saveEditPoint();
+                              if (e.key === "Escape") cancelEditPoint();
+                            }}
+                            onBlur={saveEditPoint}
+                            className="flex-1 min-w-0 px-2 py-1 bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none text-sm"
+                          />
+                        ) : (
+                          <span
+                            className={`flex-1 min-w-0 text-sm ${
+                              pt.done
+                                ? "line-through text-gray-400"
+                                : "text-gray-700"
+                            }`}
+                            onDoubleClick={() => startEditPoint(pt)}
+                          >
+                            {pt.text || "(empty)"}
+                          </span>
                         )}
-                      </span>
-                      {pt.text}
-                    </li>
-                  ))}
+
+                        <button
+                          onClick={() => handleRemovePoint(pt.id)}
+                          className="p-1 text-gray-400 hover:text-red-600"
+                          aria-label="Remove point"
+                        >
+                          <FontAwesomeIcon icon={faTimes} className="w-3 h-3" />
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
 
@@ -518,6 +655,8 @@ const Notes = () => {
           </div>
         </main>
       </div>
+
+      {showTagManager && <TagManagerModal onClose={handleToggleManageTags} />}
     </div>
   );
 };

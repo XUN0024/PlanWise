@@ -10,6 +10,7 @@ import LoginPage from "./components/LoginPage";
 import Dashboard from "./components/Dashboard";
 import Tasks from "./components/tasks";
 import Notes from "./components/Notes";
+import Expenses from "./components/Expenses";
 import ErrorBoundary from "./components/ErrorBoundary";
 import "./i18n/index.jsx"; // Initialize i18n
 
@@ -83,6 +84,15 @@ const AppRoutes = () => {
             element={
               <ProtectedRoute>
                 <Notes />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/expenses"
+            element={
+              <ProtectedRoute>
+                <Expenses />
               </ProtectedRoute>
             }
           />

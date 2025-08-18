@@ -35,26 +35,38 @@ const Tasks = () => {
       id: 1,
       title: "tasks 3",
       description: "Complete project documentation",
-      dueDate: "Apr 20",
       priority: "High",
-      subtasks: ["Draft outline", "Collect screenshots", "Review with team"],
+      subtasks: [
+        { id: 1, title: "Draft outline", isCompleted: false },
+        { id: 2, title: "Collect screenshots", isCompleted: false },
+        { id: 3, title: "Review with team", isCompleted: true },
+      ],
       reminderTime: "14 August 15:48",
+      createdAt: "2025-08-14 15:48:00",
     },
     {
       id: 2,
       title: "tasks 2",
       description: "Review code changes",
-      dueDate: "Apr 18",
       priority: "Medium",
-      subtasks: ["Read PR #123", "Leave comments", "Approve"],
+      subtasks: [
+        { id: 1, title: "Draft outline", isCompleted: false },
+        { id: 2, title: "Collect screenshots", isCompleted: false },
+        { id: 3, title: "Review with team", isCompleted: true },
+      ],
+      createdAt: "2025-08-14 15:48:00",
     },
     {
       id: 3,
       title: "tasks 1",
       description: "Update user interface",
-      dueDate: "Apr 22",
       priority: "Low",
-      subtasks: ["Polish buttons", "Fix spacing", "Dark mode QA"],
+      subtasks: [
+        { id: 1, title: "Draft outline", isCompleted: false },
+        { id: 2, title: "Collect screenshots", isCompleted: false },
+        { id: 3, title: "Review with team", isCompleted: true },
+      ],
+      createdAt: "2025-08-14 15:48:00",
     },
   ]);
 
@@ -63,18 +75,26 @@ const Tasks = () => {
       id: 4,
       title: "tasks 0",
       description: "Set up development environment",
-      dueDate: "Apr 15",
       priority: "High",
-      subtasks: ["Install Node", "Configure ESLint", "Run first build"],
+      subtasks: [
+        { id: 1, title: "Draft outline", isCompleted: false },
+        { id: 2, title: "Collect screenshots", isCompleted: false },
+        { id: 3, title: "Review with team", isCompleted: true },
+      ],
       reminderTime: "14 August 15:48",
+      createdAt: "2025-08-14 15:48:00",
     },
     {
       id: 5,
       title: "tasks 4",
       description: "Create initial project structure",
-      dueDate: "Apr 16",
       priority: "Medium",
-      subtasks: ["Create repo", "Init CI", "Define folders"],
+      subtasks: [
+        { id: 1, title: "Draft outline", isCompleted: false },
+        { id: 2, title: "Collect screenshots", isCompleted: false },
+        { id: 3, title: "Review with team", isCompleted: true },
+      ],
+      createdAt: "2025-08-14 15:48:00",
     },
   ]);
 
@@ -131,7 +151,6 @@ const Tasks = () => {
   const [newTask, setNewTask] = useState({
     title: "",
     description: "",
-    dueDate: "",
     priority: "Medium",
     subtasks: [],
   });
@@ -200,7 +219,6 @@ const Tasks = () => {
     setNewTask({
       title: "",
       description: "",
-      dueDate: "",
       priority: "Medium",
       subtasks: [],
     });
@@ -749,12 +767,10 @@ const Tasks = () => {
                     {task.subtasks && task.subtasks.length > 0 && (
                       <ul className="mt-2 space-y-1">
                         {task.subtasks.map((st, i) => {
-                          const subKey = `${task.id}-sub-${i}`;
-                          const isChecked = !!checkedMap[subKey];
-                          const label =
-                            typeof st === "string"
-                              ? st
-                              : st?.title ?? String(st);
+                          const subKey = `${task.id}-sub-${st.id || i}`;
+                          const isChecked =
+                            !!checkedMap[subKey] || st.isCompleted;
+                          const label = st.title || st;
                           return (
                             <li
                               key={subKey}
@@ -837,15 +853,8 @@ const Tasks = () => {
                         })}
                       </ul>
                     )}
-                    {/* Date and Priority */}
+                    {/* Priority */}
                     <div className="flex items-center space-x-4 mt-2">
-                      <div className="flex items-center space-x-1 text-sm text-gray-500">
-                        <FontAwesomeIcon
-                          icon={faCalendar}
-                          className="w-3 h-3"
-                        />
-                        <span>{task.dueDate}</span>
-                      </div>
                       <div
                         className={`text-sm font-medium ${getPriorityColor(
                           task.priority
@@ -917,15 +926,8 @@ const Tasks = () => {
                             {task.description}
                           </p>
                         )}
-                        {/* Date and Priority for completed tasks */}
+                        {/* Priority for completed tasks */}
                         <div className="flex items-center space-x-4 mt-2">
-                          <div className="flex items-center space-x-1 text-sm text-gray-400">
-                            <FontAwesomeIcon
-                              icon={faFile}
-                              className="w-3 h-3"
-                            />
-                            <span className="line-through">{task.dueDate}</span>
-                          </div>
                           <div
                             className={`text-sm font-medium text-gray-400 line-through`}
                           >
@@ -936,11 +938,10 @@ const Tasks = () => {
                         {task.subtasks && task.subtasks.length > 0 && (
                           <ul className="mt-2 space-y-1">
                             {task.subtasks.map((st, i) => {
-                              const subKey = `${task.id}-done-sub-${i}`;
-                              const label =
-                                typeof st === "string"
-                                  ? st
-                                  : st?.title ?? String(st);
+                              const subKey = `${task.id}-done-sub-${
+                                st.id || i
+                              }`;
+                              const label = st.title || st;
                               return (
                                 <li
                                   key={subKey}
@@ -1060,28 +1061,6 @@ const Tasks = () => {
                     ))}
                   </div>
                 )}
-              </div>
-
-              {/* Due Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Due Date
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={newTask.dueDate}
-                    onChange={(e) =>
-                      handleInputChange("dueDate", e.target.value)
-                    }
-                    className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g., Apr 20"
-                  />
-                  <FontAwesomeIcon
-                    icon={faCalendar}
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
-                  />
-                </div>
               </div>
 
               {/* Priority */}
@@ -1242,28 +1221,6 @@ const Tasks = () => {
                       ))}
                     </div>
                   )}
-              </div>
-
-              {/* Due Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Due Date
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={editingTask.dueDate}
-                    onChange={(e) =>
-                      handleEditInputChange("dueDate", e.target.value)
-                    }
-                    className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g., Apr 20"
-                  />
-                  <FontAwesomeIcon
-                    icon={faCalendar}
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
-                  />
-                </div>
               </div>
 
               {/* Priority */}

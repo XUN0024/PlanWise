@@ -12,9 +12,21 @@ create table tasks (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete cascade,
   title text not null,
+  reminder_date date,
+  reminder_time time,
+  repeat_option text,
   description text,
+  priority text check (priority in ('High', 'Medium', 'Low')),
   is_completed boolean default false,
-  due_date date,
+  created_at timestamptz default now()
+);
+
+--subtasks
+create table subtasks (
+  id uuid primary key default gen_random_uuid(),
+  task_id uuid references tasks(id) on delete cascade,
+  title text not null,
+  is_completed boolean default false,
   created_at timestamptz default now()
 );
 

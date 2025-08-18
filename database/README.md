@@ -128,17 +128,12 @@ The database includes several utility functions:
    - Workspace member record is created
    - Proper permissions are applied
 
-3. **Project Creation**: When projects are created:
-
-   - Creator becomes project owner
-   - Project member record is created
-   - Workspace membership is verified
-
-4. **Task Management**: Tasks support:
+3. **Task Management**: Tasks support:
    - Hierarchical structure (parent/child tasks)
-   - Assignment to project members
-   - Comments and activity tracking
-   - Due dates and priorities
+   - Assignment
+   - Due dates
+   - Priority
+   - Status tracking
 
 ## 🔧 Environment Variables Needed
 

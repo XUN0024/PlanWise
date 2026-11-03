@@ -1,325 +1,259 @@
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useTranslation } from "react-i18next";
-import planWiseLogo from "../../assets/PlanWise.png";
-import {
-  faTasks,
-  faDollarSign,
-  faStickyNote,
-  faFile,
-  faPlus,
-  faCheck,
-  faChartBar,
-  faUpload,
-  faShoppingCart,
-  faGasPump,
-  faCoffee,
-  faEdit,
-  faFilePdf,
-  faFileExcel,
-  faTimes,
-  faImage,
-  faEyeDropper,
-  faStar,
-  faArrowRight,
-  faTags,
-  faListCheck,
-} from "@fortawesome/free-solid-svg-icons";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import LanguageSwitcher from "./LanguageSwitcher";
 import NotesSidebar from "./NotesSidebar";
-import TagManagerModal from "./TagManagerModal";
+import NoteEditor from "./NoteEditor";
+import NoteContextMenu from "./NoteContextMenu";
+import { getNotes, createNote, updateNote, deleteNote, updateNoteAppearance } from "../services/noteService";
 
-const Notes = () => {
+export const filterNotes = (notes, query) => {
+  const tokens = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  return notes.filter((note) => {
+    const text = `${note.title} ${note.body} ${note.tags.join(" ")}`.toLowerCase();
+    return tokens.every((token) => token === "is:pinned" ? note.pinned
+      : token.startsWith("#") ? note.tags.some((tag) => tag.toLowerCase().includes(token.slice(1)))
+      : text.includes(token));
+  }).sort((a, b) => Number(b.pinned) - Number(a.pinned));
+};
+
+export default function Notes() {
   const { user, signOut } = useAuth();
-  const { t } = useTranslation();
-  const handleSignOut = async () => {
-    await signOut();
-  };
-
-  // Mock data (replace with real data later)
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const [snapshot, setSnapshot] = useState({ userId: null, notes: [], loading: true, error: null });
+  const [selectedId, setSelectedId] = useState(null);
   const [search, setSearch] = useState("");
-  const [notes, setNotes] = useState([
-    {
-      id: "n1",
-      title: "The user panel UI design has some bugs.",
-      body: "The user panel UI design has some bugs.",
-      points: [
-        { id: "p1", text: "Fix top header spacing (24px vertical rhythm)" },
-        { id: "p2", text: "Align sidebar icons and labels to an 8px grid" },
-        {
-          id: "p3",
-          text: "Adjust padding in the main content area for consistency",
-        },
-      ],
-      attachments: [
-        { id: "a1", type: "file", name: "Spec.pdf", size: "120 KB" },
-        { id: "a2", type: "file", name: "Costs.xlsx", size: "36 KB" },
-        { id: "a3", type: "image", name: "Mock.png", size: "512 KB" },
-      ],
-      tags: ["ui", "bug"],
-      color: "#F59E0B", //amber
-      pinned: true,
-      starred: true,
-      updatedAt: "Today 10:20",
-    },
-    {
-      id: "n2",
-      title: "(1)STEP to create a REACT PROJECT:",
-      body: "body 233333333333333333",
-      tags: ["react"],
-      color: "#EF4444", // red-500
-      pinned: false,
-      starred: false,
-      updatedAt: "Today 09:00",
-    },
-    {
-      id: "n3",
-      title: "(2)WHAT IS JSX",
-      body: "body 344444444444444444444444444444",
-      tags: ["react"],
-      color: "#3B82F6", // blue-500
-      pinned: false,
-      starred: true,
-      updatedAt: "Yesterday",
-    },
-    {
-      id: "n4",
-      title: "(3)JSX中，我们使用大括号语法 來識别变量",
-      body: "...",
-      points: [
-        { id: "p1", text: "Fix top header spacing (24px vertical rhythm)" },
-        { id: "p2", text: "Align sidebar icons and labels to an 8px grid" },
-        {
-          id: "p3",
-          text: "Adjust padding in the main content area for consistency",
-        },
-      ],
-      attachments: [
-        { id: "a1", type: "file", name: "Spec.pdf", size: "120 KB" },
-        { id: "a2", type: "file", name: "Costs.xlsx", size: "36 KB" },
-        { id: "a3", type: "image", name: "Mock.png", size: "512 KB" },
-      ],
-      tags: ["jsx", "cn"],
-      color: "#10B981", // emerald-500
-      pinned: false,
-      starred: true,
-      updatedAt: "2d ago",
-    },
-    {
-      id: "n5",
-      title: "(4)JSX中，我们使用大括号语法 來識别变量",
-      body: "...",
-      tags: ["jsx", "cn"],
-      color: "#EC4899", // pink-500
-      pinned: false,
-      starred: true,
-      updatedAt: "2d ago",
-    },
-    {
-      id: "n3",
-      title: "(2)WHAT IS JSX",
-      body: "body 344444444444444444444444444444",
-      tags: ["react"],
-      color: "#8B5CF6", // violet-500
-      pinned: false,
-      starred: true,
-      updatedAt: "Yesterday",
-    },
-  ]);
-  const getIcon = (k) =>
-    k === "pdf" ? faFilePdf : k === "excel" ? faFileExcel : faImage;
+  const [reload, setReload] = useState(0);
+  const [editor, setEditor] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [writeError, setWriteError] = useState(null);
+  const [notice, setNotice] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [pendingAction, setPendingAction] = useState(null);
+  const [contextMenu, setContextMenu] = useState(null);
+  const operation = useRef(null);
+  const lastEdit = useRef({ id: null, at: 0 });
+  const currentUser = useRef(user?.id);
+  currentUser.current = user?.id;
 
-  // Shared palette and color picker to match sidebar sticky note colors
-  const PALETTE = [
-    "#F59E0B", // amber-500
-    "#EF4444", // red-500
-    "#3B82F6", // blue-500
-    "#10B981", // emerald-500
-    "#EC4899", // pink-500
-    "#f4f3f6ff", // violet-500
-  ];
-
-  const bodyRef = useRef(null);
   useEffect(() => {
-    const el = bodyRef.current;
-    if (!el) return;
-    const resize = () => {
-      el.style.height = "auto";
-      const max = Math.max(240, window.innerHeight - 320); // 320 可按你的头部/边距调
-      el.style.height = Math.min(el.scrollHeight, max) + "px";
-    };
-    resize();
-    window.addEventListener("resize", resize);
-    return () => window.removeEventListener("resize", resize);
-  }, [selectedId, selectedNote?.body]);
-
-  const hash = (s = "") => {
-    let h = 0;
-    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-    return h >>> 0;
-  };
-  const getNoteColor = (note) =>
-    note?.color ||
-    PALETTE[hash(note?.id || note?.title || "") % PALETTE.length];
-
-  // Default fallback color for sidebar sticky notes when a note has no explicit color
-  const color = "#F59E0B"; // amber-500
-
-  const [selectedId, setSelectedId] = useState(notes[0]?.id ?? null);
-  const [showColorPicker, setShowColorPicker] = useState(false);
-  const colorPickerRef = useRef(null);
-
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const titleInputRef = useRef(null);
-  useEffect(() => {
-    if (isEditingTitle) {
-      // Focus input when entering edit mode
-      setTimeout(() => titleInputRef.current?.focus?.(), 0);
-    }
-  }, [isEditingTitle]);
-
-  // Close color picker when clicking outside
-  useEffect(() => {
-    if (!showColorPicker) return;
-    const onDocClick = (e) => {
-      if (!colorPickerRef.current) return;
-      if (!colorPickerRef.current.contains(e.target)) {
-        setShowColorPicker(false);
-      }
-    };
-    document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
-  }, [showColorPicker]);
-
-  const handlePickNoteColor = (c) => {
-    setNotes((prev) =>
-      prev.map((n) => (n.id === selectedId ? { ...n, color: c } : n))
-    );
-  };
-  // Filter notes by search query with simple operators:
-  // - Plain text matches title/body/tags (AND across tokens)
-  // - #tag matches tags
-  // - is:pinned keeps only pinned notes
-  // Also sorts pinned notes to the top.
-  const filteredNotes = useMemo(() => {
-    const q = (search || "").trim().toLowerCase();
-    const sortPinnedTop = (arr) =>
-      arr.slice().sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned));
-    if (!q) return sortPinnedTop(notes);
-
-    const tokens = q.split(/\s+/).filter(Boolean);
-
-    const res = notes.filter((n) => {
-      const hay = `${n.title ?? ""} ${n.body ?? ""} ${(n.tags ?? []).join(
-        " "
-      )}`.toLowerCase();
-      return tokens.every((tok) => {
-        if (tok === "is:pinned") return !!n.pinned;
-        if (tok.startsWith("#")) {
-          const tag = tok.slice(1);
-          return (n.tags ?? []).some((t) => t.toLowerCase().includes(tag));
+    let cancelled = false;
+    const userId = user?.id;
+    setSelectedId(null);
+    setSearch("");
+    setEditor(null);
+    setDeleteTarget(null);
+    setPendingAction(null);
+    setContextMenu(null);
+    setWriteError(null);
+    setNotice(null);
+    setBusy(false);
+    operation.current = null;
+    setSnapshot({ userId, notes: [], loading: !!userId, error: null });
+    if (userId) {
+      getNotes(userId).then((notes) => {
+        if (!cancelled && currentUser.current === userId) {
+          setSnapshot({ userId, notes, loading: false, error: null });
         }
-        return hay.includes(tok);
+      }).catch(() => {
+        if (!cancelled && currentUser.current === userId) {
+          setSnapshot({ userId, notes: [], loading: false, error: true });
+        }
       });
-    });
+    }
+    return () => { cancelled = true; operation.current = null; };
+  }, [user?.id, reload]);
 
-    return sortPinnedTop(res);
-  }, [search, notes]);
+  // Associate the snapshot with its account so old content is never shown on switch.
+  const { notes, loading, error } = snapshot.userId === user?.id
+    ? snapshot : { notes: [], loading: true, error: null };
+  const filteredNotes = useMemo(() => filterNotes(notes, search), [notes, search]);
   const selectedNote = useMemo(
-    () => notes.find((n) => n.id === selectedId) || filteredNotes[0] || null,
-    [notes, filteredNotes, selectedId]
+    () => filteredNotes.find((note) => note.id === selectedId) ?? null,
+    [filteredNotes, selectedId]
   );
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return notes;
-    return notes.filter(
-      (n) =>
-        n.title.toLowerCase().includes(q) || n.body.toLowerCase().includes(q)
-    );
-  }, [search, notes]);
-
-  const handleStarNote = () => {
-    setNotes((prev) =>
-      prev.map((n) => (n.id === selectedId ? { ...n, starred: !n.starred } : n))
-    );
-  };
-
-  const handleUpdateSelectedNote = (updates) => {
-    setNotes((prev) =>
-      prev.map((n) => (n.id === selectedId ? { ...n, ...updates } : n))
-    );
-  };
-
-  const handleRemoveTag = (tag) => {
-    handleUpdateSelectedNote({
-      tags: (selectedNote?.tags ?? []).filter((t) => t !== tag),
-    });
-  };
-
-  const [showTagManager, setShowTagManager] = useState(false);
-  const handleToggleManageTags = () => {
-    setShowTagManager(!showTagManager);
-  };
-
-  const handleCheckPoint = (id) => {
-    handleUpdateSelectedNote({
-      points: (selectedNote?.points ?? []).map((p) =>
-        p.id === id ? { ...p, done: !p.done } : p
-      ),
-    });
-  };
-
-  // Checklist editing state for note points
-  const [editingPointId, setEditingPointId] = useState(null);
-  const [editingPointText, setEditingPointText] = useState("");
-
-  const startEditPoint = (pt) => {
-    setEditingPointId(pt.id);
-    setEditingPointText(pt.text ?? "");
-  };
-  const saveEditPoint = () => {
-    if (!editingPointId) return;
-    handleUpdateSelectedNote({
-      points: (selectedNote?.points ?? []).map((p) =>
-        p.id === editingPointId ? { ...p, text: editingPointText } : p
-      ),
-    });
-    setEditingPointId(null);
-    setEditingPointText("");
-  };
-  const cancelEditPoint = () => {
-    setEditingPointId(null);
-    setEditingPointText("");
-  };
-
-  // Reset editing when switching notes
+  const activeEditor = editor?.userId === user?.id ? editor : null;
+  const activeDelete = deleteTarget && deleteTarget.userId === user?.id ? deleteTarget.note : null;
+  const draft = activeEditor?.draft;
+  const menuNote = contextMenu?.userId === user?.id
+    ? notes.find((note) => note.id === contextMenu?.id) : null;
+  const dirty = !!draft && (draft.title !== activeEditor.base.title || draft.body !== activeEditor.base.body);
   useEffect(() => {
-    setEditingPointId(null);
-    setEditingPointText("");
-  }, [selectedId]);
+    if ((!dirty && !busy) || typeof window === "undefined") return;
+    const warn = (event) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty, busy]);
 
-  const handleRemovePoint = (id) => {
-    handleUpdateSelectedNote({
-      points: (selectedNote?.points ?? []).filter((p) => p.id !== id),
+  const perform = (action) => {
+    setContextMenu(null);
+    setEditor(null);
+    setDeleteTarget(null);
+    setWriteError(null);
+    setNotice(null);
+    setPendingAction(null);
+    if (action.type === "new") {
+      const note = { id: crypto.randomUUID(), title: "", body: "", color: "#F59E0B" };
+      setSearch("");
+      setSelectedId(null);
+      setEditor({ userId: user.id, draft: note, base: { ...note }, isNew: true });
+    } else if (action.type === "select") {
+      setSelectedId(action.id);
+    } else if (action.type === "edit" || action.type === "delete") {
+      const target = notes.find((note) => note.id === action.id);
+      if (!target) return;
+      setSelectedId(target.id);
+      setSearch("");
+      if (action.type === "edit") {
+        setEditor({ userId: user.id, draft: { ...target }, base: { ...target }, isNew: false });
+      } else {
+        setDeleteTarget({ userId: user.id, note: target });
+      }
+    } else if (action.type === "reload") {
+      setReload((value) => value + 1);
+    } else if (action.type === "navigate") {
+      navigate(action.to);
+    } else if (action.type === "signOut") {
+      signOut();
+    }
+  };
+  const request = (action) => {
+    if (operation.current || loading || !user?.id) return;
+    if (["select", "edit"].includes(action.type) && draft?.id === action.id) return;
+    if (dirty) setPendingAction({ userId: user.id, ...action });
+    else perform(action);
+  };
+  const handleSignOut = () => request({ type: "signOut" });
+  const handleHeaderClick = (event) => {
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    const anchor = event.target.closest("a");
+    if (!anchor || anchor.getAttribute("href") === "#") return;
+    if (operation.current || dirty) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!operation.current) request({ type: "navigate", to: anchor.getAttribute("href") });
+    }
+  };
+  const mutate = async (action, fallback, conflictKey = "notesPanel.conflict", kind = "other") => {
+    if (operation.current || loading || !user?.id) return;
+    const token = { kind };
+    const userId = user.id;
+    operation.current = token;
+    setBusy(true);
+    setWriteError(null);
+    setNotice(null);
+    try {
+      const apply = await action(userId);
+      if (operation.current === token && currentUser.current === userId) apply();
+    } catch (err) {
+      if (operation.current === token && currentUser.current === userId) {
+        setWriteError(err.code === "NOTE_CONFLICT" ? conflictKey
+          : err.code === "NOTE_TITLE_REQUIRED" ? "notesPanel.titleRequired" : fallback);
+      }
+    } finally {
+      if (operation.current === token) { operation.current = null; setBusy(false); }
+    }
+  };
+  const handleSave = (event, { automatic = false } = {}) => {
+    event?.preventDefault();
+    if (!activeEditor) return;
+    const submitted = activeEditor;
+    mutate(async (userId) => {
+      const saved = submitted.isNew ? await createNote(submitted.draft, userId)
+        : await updateNote(submitted.draft, userId, submitted.base.updatedAt);
+      return () => {
+        setSnapshot((value) => ({ ...value, notes: [
+          saved, ...value.notes.filter((note) => note.id !== saved.id),
+        ].sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || "") || a.id.localeCompare(b.id)) }));
+        setSelectedId(saved.id);
+        setSearch("");
+        setEditor((latest) => {
+          if (latest?.userId !== userId || latest.draft.id !== saved.id) return latest;
+          const newerTitle = latest.draft.title !== submitted.draft.title;
+          const newerBody = latest.draft.body !== submitted.draft.body;
+          if (!automatic && !newerTitle && !newerBody) return null;
+          return {
+            ...latest, isNew: false, base: { ...saved }, saved: true,
+            draft: {
+              ...saved,
+              title: newerTitle ? latest.draft.title : saved.title,
+              body: newerBody ? latest.draft.body : saved.body,
+            },
+          };
+        });
+        if (!automatic) setNotice("notesPanel.saved");
+      };
+    }, "notesPanel.saveError", "notesPanel.conflict", "content");
+  };
+  // Debounce only actual text edits. Serialize requests, then save any newer text
+  // against the returned server version, without replacing it with an old response.
+  useEffect(() => {
+    if (!draft || !dirty || !draft.title.trim() || busy || loading || writeError
+      || pendingAction || activeDelete || lastEdit.current.id !== draft.id) return;
+    const delay = Math.max(0, 800 - (Date.now() - lastEdit.current.at));
+    const timer = setTimeout(() => handleSave(undefined, { automatic: true }), delay);
+    return () => clearTimeout(timer);
+  }, [draft?.id, draft?.title, draft?.body, activeEditor?.base.updatedAt, activeEditor?.isNew,
+    dirty, busy, loading, writeError, pendingAction, activeDelete, user?.id]);
+  const handleEdit = () => {
+    if (selectedNote) request({ type: "edit", id: selectedNote.id });
+  };
+  const openContextMenu = (event, id) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (operation.current || loading || activeDelete || pendingAction || !user?.id) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const pointer = event.type === "contextmenu" && (event.clientX || event.clientY);
+    setContextMenu({
+      userId: user.id, id,
+      x: pointer ? event.clientX : bounds.left,
+      y: pointer ? event.clientY : bounds.bottom,
     });
   };
-
-  const handleAddPoint = () => {
-    handleUpdateSelectedNote({
-      points: [
-        ...(selectedNote?.points ?? []),
-        { id: `p${Date.now()}`, text: "", done: false },
-      ],
-    });
+  const handleMenuAction = (action) => {
+    const target = menuNote;
+    setContextMenu(null);
+    if (!target || operation.current) return;
+    if (action.type !== "appearance") {
+      request({ type: action.type, id: target.id });
+      return;
+    }
+    mutate(async (userId) => {
+      const saved = await updateNoteAppearance(target, action.changes, userId);
+      return () => {
+        setSnapshot((value) => ({ ...value, notes: value.notes.map((note) => note.id === saved.id ? saved : note) }));
+        // Metadata changes must not discard unsaved title/body edits.
+        setEditor((value) => value?.userId === userId && value.draft.id === saved.id
+          ? { ...value, base: { ...saved }, draft: { ...saved, title: value.draft.title, body: value.draft.body } }
+          : value);
+        setNotice("notesPanel.appearanceSaved");
+      };
+    }, "notesPanel.appearanceError", "notesPanel.appearanceConflict");
+  };
+  const handleDelete = () => {
+    if (!activeDelete) return;
+    mutate(async (userId) => {
+      await deleteNote(activeDelete, userId);
+      return () => {
+        setSnapshot((value) => ({ ...value, notes: value.notes.filter((note) => note.id !== activeDelete.id) }));
+        setSelectedId(null);
+        setDeleteTarget(null);
+        setNotice("notesPanel.deleted");
+      };
+    }, "notesPanel.deleteError");
+  };
+  const updatedLabel = (value) => {
+    const date = new Date(value);
+    return value && !Number.isNaN(date.getTime())
+      ? date.toLocaleString(i18n?.language || undefined) : "—";
   };
 
   return (
     <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header onClickCapture={handleHeaderClick} className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo and Navigation */}
@@ -347,12 +281,12 @@ const Notes = () => {
                 >
                   {t("tasks")}
                 </Link>
-                <a
-                  href="/expenses"
+                <Link
+                  to="/expenses"
                   className="text-gray-500 hover:text-gray-700 px-1 py-4 text-sm font-medium"
                 >
                   Expenses
-                </a>
+                </Link>
                 <Link
                   to="/notes"
                   className="text-blue-600 border-b-2 border-blue-600 hover:text-gray-700 px-1 py-4 text-sm font-medium"
@@ -382,6 +316,7 @@ const Notes = () => {
                 </span>
               </div>
               <button
+                disabled={busy}
                 onClick={handleSignOut}
                 className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors text-sm"
               >
@@ -392,273 +327,103 @@ const Notes = () => {
         </div>
       </header>
 
-      {/* Content */}
-      <div className="content-wrapper flex items-start gap-6 px-4 sm:px-6 lg:px-8 min-w-0">
-        {/* Sidebar */}
-        <aside>
-          <NotesSidebar
-            notes={filteredNotes}
-            selectedId={selectedId}
-            color={color}
-            onSelect={setSelectedId}
-          />
-        </aside>
-        {/* Main content: selected note full details */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-start gap-6 px-4 sm:px-6 lg:px-8 min-w-0">
+        <NotesSidebar notes={notes} visibleNotes={filteredNotes} selectedId={selectedNote?.id ?? null}
+          onNoteContextMenu={openContextMenu}
+          onSelect={(id) => request({ type: "select", id })} onNew={() => request({ type: "new" })}
+          busy={busy || !!activeDelete || (!!pendingAction && pendingAction.userId === user?.id)}
+          search={search} onSearchChange={setSearch} loading={loading} error={!!error} />
         <main className="flex-1 min-w-0 py-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            {/* Color banner (matches the sticky note color) */}
-            <div
-              className="h-2 w-full"
-              style={{
-                backgroundColor: selectedNote?.color || "#F59E0B", //amber as default
+          {notice && <p role="status" className="mb-4 text-sm text-green-700">{t(notice)}</p>}
+          {writeError && !draft && !activeDelete && <div role="alert" className="mb-4 p-4 bg-red-50 text-red-700 rounded-lg">
+            <p>{t(writeError)}</p>
+            <button disabled={busy} onClick={() => request({ type: "reload" })} className="mt-2 underline">{t("notesPanel.reload")}</button>
+          </div>}
+          {loading ? <p role="status" className="p-6 text-gray-600">{t("notesPanel.loading")}</p>
+            : error ? <div role="alert" className="bg-red-50 rounded-xl p-6 text-red-700">
+              <p>{t("notesPanel.loadError")}</p>
+              <button onClick={() => setReload((value) => value + 1)} className="mt-3 underline">{t("notesPanel.retry")}</button>
+            </div>
+            : draft ? <NoteEditor draft={draft} isNew={activeEditor.isNew} dirty={dirty} busy={busy}
+              saving={busy && operation.current?.kind === "content"} saved={!!activeEditor.saved} error={writeError}
+              onChange={(updates) => {
+                if (!operation.current || operation.current.kind === "content") {
+                  lastEdit.current = { id: draft.id, at: Date.now() };
+                  setEditor((value) => ({ ...value, draft: { ...value.draft, ...updates } }));
+                  setWriteError(null);
+                }
               }}
-            />
-            {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between min-w-0">
-              <div className="flex-1 min-w-0">
-                <h1 className="text-xl font-semibold text-gray-900 flex items-center gap-2 overflow-hidden flex-1 min-w-0">
-                  {isEditingTitle ? (
-                    <input
-                      ref={titleInputRef}
-                      className="w-full min-w-0 max-w-full border-b border-gray-300 focus:border-blue-500 outline-none bg-transparent text-xl font-semibold truncate"
-                      defaultValue={selectedNote?.title ?? ""}
-                      onBlur={(e) => {
-                        handleUpdateSelectedNote({ title: e.target.value });
-                        setIsEditingTitle(false);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.currentTarget.blur();
-                        } else if (e.key === "Escape") {
-                          setIsEditingTitle(false);
-                        }
-                      }}
-                    />
-                  ) : (
-                    <>
-                      <span className="block max-w-full truncate">
-                        {selectedNote?.title}
-                      </span>
-                      <FontAwesomeIcon
-                        icon={faEdit}
-                        className="w-3 h-3 ml-2 text-gray-400 cursor-pointer"
-                        onClick={() => setIsEditingTitle(true)}
-                      />
-                    </>
-                  )}
-                </h1>
-                <div className="mt-1 text-xs text-gray-500">
-                  {selectedNote?.updatedAt}
-                </div>
-              </div>
-              <div className="relative inline-flex items-center gap-2 shrink-0">
-                {/* Eyedropper with hover color picker */}
-                <div className="relative" ref={colorPickerRef}>
-                  <button
-                    onClick={() => setShowColorPicker((v) => !v)}
-                    className="px-3 py-1.5 rounded-md border border-gray-200 text-sm text-gray-700 hover:bg-gray-50"
-                  >
-                    <FontAwesomeIcon icon={faEyeDropper} className="w-3 h-3" />
-                  </button>
-
-                  {showColorPicker && (
-                    <div className="absolute right-1 mt-2 z-10 rounded-md shadow-lg border border-gray-200 bg-white p-1">
-                      <div className="flex overflow-hidden rounded-md">
-                        {[
-                          "#F59E0B",
-                          "#10B981",
-                          "#EC4899",
-                          "#8B5CF6",
-                          "#3B82F6",
-                          "#38BDF8",
-                        ].map((c) => (
-                          <button
-                            key={c}
-                            onClick={() => handlePickNoteColor(c)}
-                            className="relative w-8 h-8 focus:outline-none"
-                            style={{ backgroundColor: c }}
-                            aria-label={`Pick color ${c}`}
-                          >
-                            {selectedNote?.color === c && (
-                              <span className="absolute inset-0 flex items-center justify-center">
-                                <FontAwesomeIcon
-                                  icon={faCheck}
-                                  className="w-3 h-3 text-white"
-                                />
-                              </span>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Manage Tags */}
-                <button
-                  className="px-3 py-1.5 rounded-md border border-gray-200 text-sm text-gray-700 hover:bg-gray-50"
-                  aria-label="Manage Tags"
-                  title="Manage Tags"
-                  onClick={handleToggleManageTags}
-                >
-                  <FontAwesomeIcon icon={faTags} className="w-3 h-3" />
-                </button>
-
-                {/* Add Point to list */}
-                <button
-                  className="px-3 py-1.5 rounded-md border border-gray-200 text-sm text-gray-700 hover:bg-gray-50"
-                  aria-label="Add List"
-                  title="Add List"
-                  onClick={handleAddPoint}
-                >
-                  <FontAwesomeIcon icon={faListCheck} className="w-3 h-3" />
-                </button>
-
-                {/* Star */}
-                <button
-                  className="px-3 py-1.5 rounded-md border border-gray-200 text-sm hover:bg-gray-50"
-                  style={{
-                    color: selectedNote?.starred ? "#EAB308" : "grey",
-                  }}
-                  onClick={handleStarNote}
-                >
-                  <FontAwesomeIcon icon={faStar} className="w-3 h-3" />
-                </button>
-              </div>
+              onSave={handleSave} onCancel={() => request({ type: "cancel" })} />
+            : !notes.length ? <div role="status" className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+              <h1 className="text-xl font-semibold text-gray-900">{t("notesPanel.noNotes")}</h1>
+              <button onClick={() => request({ type: "new" })} className="mt-4 text-blue-600">{t("notesPanel.new")}</button>
             </div>
-            {/* Body */}
-            <div className="px-6 py-5">
-              {/* Tags */}
-              <div className="flex flex-wrap gap-2">
-                {(selectedNote?.tags ?? []).map((tag) => (
-                  <div className="flex items-center gap-2 rounded-full bg-gray-100 text-gray-600 text-xs px-2 py-0.5">
-                    <span key={tag} className="inline-flex items-center ">
-                      #{tag}
-                    </span>
-                    <FontAwesomeIcon
-                      icon={faTimes}
-                      className="w-3 h-3
-                    text-gray-400 hover:text-gray-600 cursor-pointer animated all duration-300"
-                      onMouseOver={(e) => (e.currentTarget.style.color = "red")}
-                      onMouseOut={(e) => (e.currentTarget.style.color = "grey")}
-                      onClick={() => handleRemoveTag(tag)}
-                    />
-                  </div>
-                ))}
-              </div>
-
-              {/* Content */}
-              <div className="mt-4 space-y-3 text-sm text-gray-700 leading-relaxed">
-                {/* <p>{selectedNote?.body}</p> */}
-                <textarea
-                  value={selectedNote?.body ?? ""}
-                  onChange={(e) =>
-                    handleUpdateSelectedNote({ body: e.target.value })
-                  }
-                  onInput={(e) => {
-                    e.currentTarget.style.height = "auto";
-                    const max = window.innerHeight * 0.35; //good prac
-                    e.currentTarget.style.height =
-                      Math.min(e.currentTarget.scrollHeight, max) + "px";
-                  }}
-                  className="w-full bg-transparent border-0 text-sm text-gray-700 focus:ring-0 focus:outline-none resize-none
-                  min-h-[30vh]
-                  overflow-auto"
-                  rows={4}
-                />
-                <ul className="space-y-2">
-                  {(selectedNote?.points ?? []).map((pt) => {
-                    const isEditing = editingPointId === pt.id;
-                    return (
-                      <li key={pt.id} className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleCheckPoint(pt.id)}
-                          className={`w-4 h-4 rounded flex items-center justify-center border-2 transition-colors ${
-                            pt.done
-                              ? "border-blue-500 bg-blue-500 text-white"
-                              : "border-gray-300 bg-white text-gray-400"
-                          }`}
-                          aria-pressed={!!pt.done}
-                        >
-                          {pt.done && (
-                            <FontAwesomeIcon
-                              icon={faCheck}
-                              className="w-2.5 h-2.5"
-                            />
-                          )}
-                        </button>
-
-                        {isEditing ? (
-                          <input
-                            value={editingPointText}
-                            onChange={(e) =>
-                              setEditingPointText(e.target.value)
-                            }
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") saveEditPoint();
-                              if (e.key === "Escape") cancelEditPoint();
-                            }}
-                            onBlur={saveEditPoint}
-                            className="flex-1 min-w-0 px-2 py-1 bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none text-sm"
-                          />
-                        ) : (
-                          <span
-                            className={`flex-1 min-w-0 text-sm ${
-                              pt.done
-                                ? "line-through text-gray-400"
-                                : "text-gray-700"
-                            }`}
-                            onDoubleClick={() => startEditPoint(pt)}
-                          >
-                            {pt.text || "(empty)"}
-                          </span>
-                        )}
-
-                        <button
-                          onClick={() => handleRemovePoint(pt.id)}
-                          className="p-1 text-gray-400 hover:text-red-600"
-                          aria-label="Remove point"
-                        >
-                          <FontAwesomeIcon icon={faTimes} className="w-3 h-3" />
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-
-              {/* Attachments */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
-                {(selectedNote?.attachments ?? []).map((f) => (
-                  <div
-                    key={f.id}
-                    className="border rounded-md p-3 flex items-center gap-3 hover:bg-gray-50 cursor-pointer"
-                  >
-                    <FontAwesomeIcon
-                      icon={getIcon(f.kind)}
-                      className={`w-5 h-5 ${
-                        f.kind === "pdf"
-                          ? "text-red-500"
-                          : f.kind === "excel"
-                          ? "text-green-600"
-                          : "text-blue-500"
-                      }`}
-                    />
-                    <div>
-                      <div className="text-sm text-gray-900">{f.name}</div>
-                      <div className="text-xs text-gray-500">{f.size}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            : !filteredNotes.length ? <div role="status" className="bg-white rounded-xl border p-8 text-center text-gray-500">
+              <p>{t("notesPanel.noMatches")}</p>
+              <button onClick={() => setSearch("")} className="mt-3 text-blue-600">{t("notesPanel.clearSearch")}</button>
             </div>
-          </div>
+            : !selectedNote ? <div role="status" className="bg-white rounded-xl border p-8 text-center text-gray-500">
+              {t("notesPanel.selectNote")}
+            </div>
+            : <article onContextMenu={(event) => openContextMenu(event, selectedNote.id)} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="h-2" style={{ backgroundColor: selectedNote.color }} />
+              <header className="px-6 py-4 border-b border-gray-100">
+                <div className="flex items-start justify-between gap-3">
+                  <h1 className="text-xl font-semibold text-gray-900 break-words min-w-0">{selectedNote.title || t("notesPanel.untitled")}</h1>
+                  <div className="flex gap-3 text-sm shrink-0">
+                    <button disabled={busy} onClick={handleEdit} className="text-blue-600">{t("notesPanel.edit")}</button>
+                    <button disabled={busy} onClick={() => request({ type: "delete", id: selectedNote.id })} className="text-red-600">{t("notesPanel.delete")}</button>
+                    <button disabled={busy} onClick={() => request({ type: "select", id: null })} className="text-gray-500">{t("notesPanel.close")}</button>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">{t("notesPanel.updated")}: {updatedLabel(selectedNote.updatedAt)}</p>
+                <div className="flex gap-3 text-xs text-gray-500 mt-2">
+                  {selectedNote.pinned && <span>{t("notesPanel.pinned")}</span>}
+                  {selectedNote.starred && <span>{t("notesPanel.starred")}</span>}
+                </div>
+              </header>
+              <div className="px-6 py-5">
+                <div className="flex flex-wrap gap-2 mb-4">{selectedNote.tags.map((tag) =>
+                  <span key={tag} className="rounded-full bg-gray-100 text-gray-600 text-xs px-2 py-1">#{tag}</span>
+                )}</div>
+                <p className="whitespace-pre-wrap break-words text-sm text-gray-700 leading-relaxed">{selectedNote.body || t("notesPanel.noContent")}</p>
+                {!!selectedNote.points.length && <ul aria-label={t("notesPanel.checklist")} className="mt-5 space-y-2">
+                  {selectedNote.points.map((point) => <li key={point.id} className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={point.done} disabled aria-label={point.text || t("notesPanel.checklist")} />
+                    <span className={point.done ? "line-through text-gray-400" : "text-gray-700"}>{point.text}</span>
+                  </li>)}
+                </ul>}
+              </div>
+            </article>}
+          {draft && ["notesPanel.conflict", "notesPanel.appearanceConflict"].includes(writeError) && <button disabled={busy} onClick={() => request({ type: "reload" })} className="mt-3 text-blue-600 underline">{t("notesPanel.reload")}</button>}
         </main>
       </div>
-
-      {showTagManager && <TagManagerModal onClose={handleToggleManageTags} />}
+      {menuNote && !busy && !activeDelete && !pendingAction && <NoteContextMenu key={`${menuNote.id}-${contextMenu.x}-${contextMenu.y}`}
+        note={menuNote} x={contextMenu.x} y={contextMenu.y}
+        onAction={handleMenuAction} onClose={() => setContextMenu(null)} />}
+      {activeDelete && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <section role="alertdialog" aria-modal="true" aria-labelledby="delete-note-title" className="bg-white rounded-xl p-6 max-w-md w-full">
+          <h2 id="delete-note-title" className="text-lg font-semibold">{t("notesPanel.deleteTitle")}</h2>
+          <p className="mt-3 font-medium break-words">{activeDelete.title || t("notesPanel.untitled")}</p>
+          <p className="mt-2 text-sm text-gray-600">{t("notesPanel.deleteBody")}</p>
+          {writeError && <p role="alert" className="mt-3 text-red-700">{t(writeError)}</p>}
+          {writeError === "notesPanel.conflict" && <button disabled={busy} onClick={() => request({ type: "reload" })} className="mt-3 underline">{t("notesPanel.reload")}</button>}
+          <div className="mt-5 flex justify-end gap-3">
+            <button autoFocus disabled={busy} onClick={() => { setDeleteTarget(null); setWriteError(null); }} className="px-4 py-2 border rounded-lg">{t("notesPanel.cancel")}</button>
+            <button disabled={busy} onClick={handleDelete} className="px-4 py-2 bg-red-600 text-white rounded-lg">{t(busy ? "notesPanel.deleting" : "notesPanel.confirmDelete")}</button>
+          </div>
+        </section>
+      </div>}
+      {pendingAction && pendingAction.userId === user?.id && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <section role="alertdialog" aria-modal="true" aria-labelledby="discard-note-title" className="bg-white rounded-xl p-6 max-w-md w-full">
+          <h2 id="discard-note-title" className="text-lg font-semibold">{t("notesPanel.discardTitle")}</h2>
+          <p className="mt-3 text-sm text-gray-600">{t("notesPanel.discardBody")}</p>
+          <div className="mt-5 flex justify-end gap-3">
+            <button autoFocus onClick={() => setPendingAction(null)} className="px-4 py-2 border rounded-lg">{t("notesPanel.keepEditing")}</button>
+            <button onClick={() => perform(pendingAction)} className="px-4 py-2 bg-red-600 text-white rounded-lg">{t("notesPanel.discard")}</button>
+          </div>
+        </section>
+      </div>}
     </div>
   );
-};
-
-export default Notes;
+}

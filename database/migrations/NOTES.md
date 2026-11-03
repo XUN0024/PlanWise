@@ -1,5 +1,8 @@
 # Notes model and basic CRUD
 
+Current implementation/acceptance checklist:
+[Note module 开发实施清单](../../docs/NOTE_MODULE_CHECKLIST.md).
+
 Run `20261103_notes_model.sql` once in the existing project's Supabase SQL
 Editor, then refresh the Notes page. Do not rerun `fresh_setup.sql`.
 The migration is rerunnable. It preserves existing content, ownership and RLS.

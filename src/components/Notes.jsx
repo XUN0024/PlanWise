@@ -6,6 +6,8 @@ import LanguageSwitcher from "./LanguageSwitcher";
 import NotesSidebar from "./NotesSidebar";
 import NoteEditor from "./NoteEditor";
 import NoteContextMenu from "./NoteContextMenu";
+import NoteAttachments from "./NoteAttachments";
+import { deleteNoteAttachments } from "../services/attachmentService";
 import { getNotes, createNote, updateNote, deleteNote, updateNoteAppearance } from "../services/noteService";
 
 export const filterNotes = (notes, query) => {
@@ -33,6 +35,8 @@ export default function Notes() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
   const [contextMenu, setContextMenu] = useState(null);
+  const [attachmentActivity, setAttachmentActivity] = useState(false);
+  const attachmentsBusy = useRef(false);
   const operation = useRef(null);
   const lastEdit = useRef({ id: null, at: 0 });
   const currentUser = useRef(user?.id);
@@ -50,6 +54,8 @@ export default function Notes() {
     setWriteError(null);
     setNotice(null);
     setBusy(false);
+    setAttachmentActivity(false);
+    attachmentsBusy.current = false;
     operation.current = null;
     setSnapshot({ userId, notes: [], loading: !!userId, error: null });
     if (userId) {
@@ -81,11 +87,11 @@ export default function Notes() {
     ? notes.find((note) => note.id === contextMenu?.id) : null;
   const dirty = !!draft && (draft.title !== activeEditor.base.title || draft.body !== activeEditor.base.body);
   useEffect(() => {
-    if ((!dirty && !busy) || typeof window === "undefined") return;
+    if ((!dirty && !busy && !attachmentActivity) || typeof window === "undefined") return;
     const warn = (event) => { event.preventDefault(); event.returnValue = ""; };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty, busy]);
+  }, [dirty, busy, attachmentActivity]);
 
   const perform = (action) => {
     setContextMenu(null);
@@ -120,7 +126,7 @@ export default function Notes() {
     }
   };
   const request = (action) => {
-    if (operation.current || loading || !user?.id) return;
+    if (operation.current || attachmentsBusy.current || loading || !user?.id) return;
     if (["select", "edit"].includes(action.type) && draft?.id === action.id) return;
     if (dirty) setPendingAction({ userId: user.id, ...action });
     else perform(action);
@@ -130,10 +136,10 @@ export default function Notes() {
     if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     const anchor = event.target.closest("a");
     if (!anchor || anchor.getAttribute("href") === "#") return;
-    if (operation.current || dirty) {
+    if (operation.current || attachmentsBusy.current || dirty) {
       event.preventDefault();
       event.stopPropagation();
-      if (!operation.current) request({ type: "navigate", to: anchor.getAttribute("href") });
+      if (!operation.current && !attachmentsBusy.current) request({ type: "navigate", to: anchor.getAttribute("href") });
     }
   };
   const mutate = async (action, fallback, conflictKey = "notesPanel.conflict", kind = "other") => {
@@ -203,7 +209,7 @@ export default function Notes() {
   const openContextMenu = (event, id) => {
     event.preventDefault();
     event.stopPropagation();
-    if (operation.current || loading || activeDelete || pendingAction || !user?.id) return;
+    if (operation.current || attachmentsBusy.current || loading || activeDelete || pendingAction || !user?.id) return;
     const bounds = event.currentTarget.getBoundingClientRect();
     const pointer = event.type === "contextmenu" && (event.clientX || event.clientY);
     setContextMenu({
@@ -235,6 +241,7 @@ export default function Notes() {
   const handleDelete = () => {
     if (!activeDelete) return;
     mutate(async (userId) => {
+      await deleteNoteAttachments(activeDelete, userId);
       await deleteNote(activeDelete, userId);
       return () => {
         setSnapshot((value) => ({ ...value, notes: value.notes.filter((note) => note.id !== activeDelete.id) }));
@@ -316,7 +323,7 @@ export default function Notes() {
                 </span>
               </div>
               <button
-                disabled={busy}
+                disabled={busy || attachmentActivity}
                 onClick={handleSignOut}
                 className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors text-sm"
               >
@@ -331,9 +338,17 @@ export default function Notes() {
         <NotesSidebar notes={notes} visibleNotes={filteredNotes} selectedId={selectedNote?.id ?? null}
           onNoteContextMenu={openContextMenu}
           onSelect={(id) => request({ type: "select", id })} onNew={() => request({ type: "new" })}
-          busy={busy || !!activeDelete || (!!pendingAction && pendingAction.userId === user?.id)}
+          busy={busy || attachmentActivity || !!activeDelete || (!!pendingAction && pendingAction.userId === user?.id)}
           search={search} onSearchChange={setSearch} loading={loading} error={!!error} />
         <main className="flex-1 min-w-0 py-6">
+          <NoteAttachments key={user?.id + ":" + (draft?.id || selectedNote?.id || "")}
+            userId={user?.id} noteId={draft?.id || selectedNote?.id}
+            saved={draft ? !activeEditor.isNew : !!selectedNote}
+            disabled={!!activeDelete || !!pendingAction || (busy && operation.current?.kind !== "content")}
+            onBusyChange={(value) => {
+              attachmentsBusy.current = value;
+              setAttachmentActivity(value);
+            }}>
           {notice && <p role="status" className="mb-4 text-sm text-green-700">{t(notice)}</p>}
           {writeError && !draft && !activeDelete && <div role="alert" className="mb-4 p-4 bg-red-50 text-red-700 rounded-lg">
             <p>{t(writeError)}</p>
@@ -396,6 +411,7 @@ export default function Notes() {
               </div>
             </article>}
           {draft && ["notesPanel.conflict", "notesPanel.appearanceConflict"].includes(writeError) && <button disabled={busy} onClick={() => request({ type: "reload" })} className="mt-3 text-blue-600 underline">{t("notesPanel.reload")}</button>}
+          </NoteAttachments>
         </main>
       </div>
       {menuNote && !busy && !activeDelete && !pendingAction && <NoteContextMenu key={`${menuNote.id}-${contextMenu.x}-${contextMenu.y}`}

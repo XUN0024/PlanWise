@@ -142,6 +142,8 @@ function page(getNotes, overrides = {}) {
     "./NotesSidebar": { __esModule: true, default: "sidebar" },
     "./NoteEditor": { __esModule: true, default: "editor" },
     "./NoteContextMenu": { __esModule: true, default: "context-menu" },
+    "./NoteAttachments": { __esModule: true, default: "attachments" },
+    "../services/attachmentService": { deleteNoteAttachments: overrides.deleteNoteAttachments || (async () => {}) },
     "../services/noteService": {
       getNotes,
       createNote: async (draft) => ({ ...draft, tags: [], points: [], updatedAt: "2026-11-03T03:00:00Z" }),
@@ -185,6 +187,7 @@ function page(getNotes, overrides = {}) {
     sidebar: () => nodes(tree).find((node) => node.type === "sidebar").props,
     editor: () => nodes(tree).find((node) => node.type === "editor")?.props,
     menu: () => nodes(tree).find((node) => node.type === "context-menu")?.props,
+    attachments: () => nodes(tree).find((node) => node.type === "attachments")?.props,
     text: () => nodes(tree).flatMap((node) => node.props?.children ?? [])
       .filter((child) => typeof child === "string").join(" "),
     button: (key) => nodes(tree).find((node) => node.type === "button" && node.props.children.includes(key)),
@@ -724,4 +727,32 @@ test("Saving indicator keeps text inputs enabled while save/cancel buttons are l
   assert.match(html, /role="status"[^>]*.*notesPanel.saving/);
   assert.doesNotMatch(html, /<fieldset[^>]* disabled=""/);
   assert.equal((html.match(/<button[^>]* disabled=""/g) || []).length, 2);
+});
+
+test("attachment target follows the saved note and upload activity blocks switching", async () => {
+  const app = page(async () => [sampleNote(), { ...sampleNote(), id: "note-b" }]);
+  app.render(); await app.flush(); app.sidebar().onSelect("note-a"); app.render();
+  assert.equal(app.attachments().noteId, "note-a");
+  assert.equal(app.attachments().saved, true);
+  app.attachments().onBusyChange(true); app.render();
+  app.sidebar().onSelect("note-b"); app.render();
+  assert.equal(app.attachments().noteId, "note-a");
+  app.attachments().onBusyChange(false); app.render();
+  app.sidebar().onSelect("note-b"); app.render();
+  assert.equal(app.attachments().noteId, "note-b");
+});
+
+test("note deletion waits for Storage cleanup; cleanup failure preserves the note", async () => {
+  const cleanup = deferred(); let deletes = 0;
+  const app = page(async () => [sampleNote()], {
+    deleteNoteAttachments: () => cleanup.promise,
+    deleteNote: async () => { deletes++; },
+  });
+  app.render(); await app.flush(); app.sidebar().onSelect("note-a"); app.render();
+  app.button("notesPanel.delete").props.onClick(); app.render();
+  app.button("notesPanel.confirmDelete").props.onClick(); app.render();
+  assert.equal(deletes, 0);
+  cleanup.reject(Error("Storage unavailable")); await app.flush();
+  assert.equal(deletes, 0);
+  assert.equal(app.sidebar().notes.length, 1);
 });

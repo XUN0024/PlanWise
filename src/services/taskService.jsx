@@ -60,7 +60,12 @@ export const updateTask = async (taskId, updates) => {
 //Delete a task
 export const deleteTask = async (taskId) => {
   try {
-    const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+    const { error } = await supabase
+      .from("tasks")
+      .delete()
+      .eq("id", taskId)
+      .select("id")
+      .single();
 
     if (error) throw error;
     return true;
@@ -71,13 +76,12 @@ export const deleteTask = async (taskId) => {
 };
 
 // get all subtasks for the task
-//TODO: add rls for task table
 export const getSubtasks = async (taskId) => {
   try {
     const { data, error } = await supabase
       .from("subtasks")
       .select()
-      .eq("task_id", taskId); // remove this after rls
+      .eq("task_id", taskId); // Select this parent's children; RLS still enforces ownership.
 
     if (error) throw error;
     return data || [];
@@ -141,4 +145,40 @@ export const deleteSubtask = async (subtaskId) => {
     console.error("Error deleting subtask: ", error);
     throw error;
   }
+};
+
+// Save the editor as one database transaction. IDs stay stable when retrying.
+export const saveTask = async (draft, isNew = false) => {
+  if (!draft.title.trim()) throw new Error("Task title is required");
+  if (draft.subtasks.some((sub) => !sub.title.trim())) {
+    throw new Error("Enter a title for each subtask, or remove the empty row");
+  }
+  if (!!draft.reminderDate !== !!draft.reminderClock) {
+    throw new Error("Set both reminder date and time, or clear both");
+  }
+  const { data, error } = await supabase.rpc("save_task", {
+    p_task_id: draft.id,
+    p_is_new: isNew,
+    p_task: {
+      title: draft.title.trim(),
+      description: draft.description || "",
+      priority: draft.priority,
+      reminder_date: draft.reminderDate || null,
+      reminder_time: draft.reminderClock || null,
+      repeat_option: draft.repeatOption || null,
+    },
+    p_subtasks: draft.subtasks.map((sub) => ({
+      id: sub.id,
+      title: sub.title.trim(),
+      is_completed: !!sub.isCompleted,
+    })),
+  });
+  if (error) {
+    if (error.code === "PGRST202") {
+      throw new Error("Task saving is not configured yet. Run database/migrations/20261103_task_save.sql in Supabase SQL Editor.");
+    }
+    throw error;
+  }
+  if (!data?.id) throw new Error("The server did not return the saved task. Retry to confirm.");
+  return data;
 };

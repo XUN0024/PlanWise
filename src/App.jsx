@@ -8,7 +8,7 @@ import {
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import LoginPage from "./components/LoginPage";
 import Dashboard from "./components/Dashboard";
-import Tasks from "./components/tasks";
+import Tasks from "./components/Tasks";
 import Notes from "./components/Notes";
 import Expenses from "./components/Expenses";
 import ErrorBoundary from "./components/ErrorBoundary";

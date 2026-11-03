@@ -1,352 +1,251 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import {
-  getTasks,
-  createTask,
-  updateTask,
-  deleteTask,
-  createSubtask,
-  updateSubtask,
-  deleteSubtask,
-} from "../services/taskService";
+import { getTasks, saveTask, updateTask, updateSubtask, deleteTask } from "../services/taskService";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faTasks,
-  faDollarSign,
-  faStickyNote,
-  faFile,
-  faPlus,
-  faCheck,
-  faEdit,
-  faArrowRight,
-  faUpload,
-  faShoppingCart,
-  faGasPump,
-  faSearch,
-  faCoffee,
-  faTimes,
-  faCalendar,
-  faAlarmClock,
-  faFlag,
-  faBell,
-} from "@fortawesome/free-solid-svg-icons";
+import { faTimes, faBell, faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import { Link } from "react-router-dom";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useTranslation } from "react-i18next";
 
+export const formatTaskForUI = (task) => ({
+  id: task.id,
+  title: task.title,
+  description: task.description || "",
+  priority: task.priority || "Medium",
+  isCompleted: !!task.is_completed,
+  createdAt: task.created_at,
+  reminderDate: task.reminder_date || "",
+  reminderClock: task.reminder_time || "",
+  repeatOption: task.repeat_option || "不重复",
+  subtasks: (task.subtasks || []).map((sub) => ({
+    id: sub.id, title: sub.title, isCompleted: !!sub.is_completed,
+  })),
+});
+
+const emptyDraft = () => ({
+  id: crypto.randomUUID(), title: "", description: "", priority: "Medium",
+  reminderDate: "", reminderClock: "", repeatOption: "不重复", subtasks: [],
+});
+const controlClass = "w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500";
+
+export function TaskCard({ task, busy, onEdit, onDelete, onToggle, onToggleSub }) {
+  return (
+    <article className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+      <div className="flex items-start gap-3">
+        <input type="checkbox" className="w-5 h-5 mt-1" checked={task.isCompleted}
+          disabled={busy} aria-label={task.isCompleted ? `Restore ${task.title}` : `Complete ${task.title}`}
+          onChange={() => onToggle(task)} />
+        <div className="flex-1 min-w-0">
+          <button disabled={busy} onClick={() => onEdit(task)} className={`text-left text-lg font-medium break-words ${task.isCompleted ? "line-through text-gray-500" : "text-gray-900"}`}>
+            {task.title}
+          </button>
+          {task.description && <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap break-words">{task.description}</p>}
+          {task.reminderDate && <p className="text-xs text-gray-500 mt-1">Reminder: {task.reminderDate} {task.reminderClock.slice(0, 5)}</p>}
+          <p className={`text-sm mt-2 ${task.priority === "High" ? "text-red-600" : task.priority === "Low" ? "text-green-600" : "text-yellow-600"}`}>{task.priority}</p>
+          {!!task.subtasks.length && <ul className="mt-3 space-y-2">
+            {task.subtasks.map((sub) => <li key={sub.id} className="flex items-center gap-2 text-sm">
+              <input type="checkbox" className="w-4 h-4" checked={sub.isCompleted} disabled={busy}
+                aria-label={`${sub.isCompleted ? "Restore" : "Complete"} subtask ${sub.title}`}
+                onChange={() => onToggleSub(task, sub)} />
+              <span className={sub.isCompleted ? "line-through text-gray-400" : "text-gray-700"}>{sub.title}</span>
+            </li>)}
+          </ul>}
+        </div>
+        <div className="flex gap-3 text-sm">
+          <button disabled={busy} onClick={() => onEdit(task)} className="text-blue-600">Edit</button>
+          <button disabled={busy} onClick={() => onDelete(task)} className="text-red-600">Delete</button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+export function TaskEditor({ draft, isNew, saving, error, onChange, onClose, onSave, onReminder, onClearReminder, reminderOpen }) {
+  useEffect(() => {
+    const previous = document.activeElement;
+    const escape = (event) => { if (event.key === "Escape" && !saving && !reminderOpen) onClose(); };
+    document.addEventListener("keydown", escape);
+    return () => { document.removeEventListener("keydown", escape); previous?.focus?.(); };
+  }, [saving, reminderOpen]);
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div role="dialog" aria-modal="true" aria-labelledby="task-editor-title" className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h2 id="task-editor-title" className="text-xl font-semibold">{isNew ? "Add New Task" : "Edit Task"}</h2>
+          <button disabled={saving} onClick={onClose} aria-label="Close task editor"><FontAwesomeIcon icon={faTimes} /></button>
+        </div>
+        {error && <p role="alert" className="mb-4 text-red-700">{error}</p>}
+        <form onSubmit={onSave}>
+          <fieldset disabled={saving} className="space-y-4 disabled:opacity-60">
+            <label className="block text-sm font-medium">Task Title *
+              <input autoFocus required value={draft.title} onChange={(e) => onChange({ title: e.target.value })} className={controlClass} />
+            </label>
+            <label className="block text-sm font-medium">Description
+              <textarea rows="3" value={draft.description} onChange={(e) => onChange({ description: e.target.value })} className={controlClass} />
+            </label>
+            <label className="block text-sm font-medium">Priority
+              <select value={draft.priority} onChange={(e) => onChange({ priority: e.target.value })} className={controlClass}>
+                <option>Low</option><option>Medium</option><option>High</option>
+              </select>
+            </label>
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium">Subtasks</span>
+                <button type="button" className="text-sm text-blue-600" onClick={() => onChange({ subtasks: [...draft.subtasks, { id: crypto.randomUUID(), title: "", isCompleted: false }] })}>+ Add Subtask</button>
+              </div>
+              <div className="space-y-2">{draft.subtasks.map((sub) => <div key={sub.id} className="flex items-center gap-2">
+                <input type="checkbox" checked={sub.isCompleted} aria-label={`Complete subtask ${sub.title || "untitled"}`}
+                  onChange={(e) => onChange({ subtasks: draft.subtasks.map((s) => s.id === sub.id ? { ...s, isCompleted: e.target.checked } : s) })} />
+                <input required aria-label="Subtask title" value={sub.title} placeholder="Enter subtask..." className={controlClass}
+                  onChange={(e) => onChange({ subtasks: draft.subtasks.map((s) => s.id === sub.id ? { ...s, title: e.target.value } : s) })} />
+                <button type="button" className="text-red-600" aria-label={`Remove subtask ${sub.title || "untitled"}`}
+                  onClick={() => onChange({ subtasks: draft.subtasks.filter((s) => s.id !== sub.id) })}><FontAwesomeIcon icon={faTimes} /></button>
+              </div>)}</div>
+            </div>
+            <div className="text-sm">
+              <button type="button" onClick={onReminder} className="text-blue-600"><FontAwesomeIcon icon={faBell} /> Set Reminder</button>
+              {draft.reminderDate && <div className="mt-2">{draft.reminderDate} {draft.reminderClock.slice(0, 5)}
+                <button type="button" onClick={onClearReminder} className="ml-3 text-red-600">Clear</button>
+              </div>}
+              <p className="text-xs text-gray-500 mt-1">Reminder times are saved; scheduled notifications are not available yet.</p>
+            </div>
+            <div className="flex justify-end gap-3 pt-4">
+              <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">Cancel</button>
+              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg">{saving ? "Saving..." : isNew ? "Add Task" : "Update Task"}</button>
+            </div>
+          </fieldset>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 const Tasks = () => {
   const { user, signOut } = useAuth();
   const { t } = useTranslation();
-  // Sample task data - you can replace this with data from your backend
-  const [incompleteTasks, setIncompleteTasks] = useState([]);
-  const [completedTasks, setCompletedTasks] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState(null);
-
-  // Helper function to format database data for UI
-  const formatTaskForUI = (dbTask) => {
-    return {
-      id: dbTask.id,
-      title: dbTask.title,
-      description: dbTask.description || "",
-      priority: dbTask.priority || "Medium",
-      isCompleted: dbTask.is_completed || false,
-      createdAt: dbTask.created_at,
-      reminderTime:
-        dbTask.reminder_date && dbTask.reminder_time
-          ? `${new Date(dbTask.reminder_date).toLocaleDateString()} ${
-              dbTask.reminder_time
-            }`
-          : null,
-      subtasks: (dbTask.subtasks || []).map((sub) => ({
-        id: sub.id,
-        title: sub.title,
-        isCompleted: sub.is_completed || false,
-      })),
-    };
-  };
-
-  //load tasks when component mounts
-  useEffect(() => {
-    const loadTasks = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        console.log("🔄 Loading tasks for user:", user?.id);
-        const tasks = await getTasks();
-        console.log("✅ Tasks loaded successfully:", tasks);
-
-        // Debug: Log first task structure
-        if (tasks.length > 0) {
-          console.log("🔍 First task structure:", tasks[0]);
-          console.log("🔍 First task subtasks:", tasks[0].subtasks);
-        }
-
-        // Format tasks for UI
-        const formattedTasks = tasks.map(formatTaskForUI);
-        console.log("🎨 Formatted tasks:", formattedTasks);
-
-        // Separate completed and incomplete tasks
-        const incomplete = formattedTasks.filter((task) => !task.isCompleted);
-        const completed = formattedTasks.filter((task) => task.isCompleted);
-
-        console.log("📊 Incomplete tasks:", incomplete.length);
-        console.log("✅ Completed tasks:", completed.length);
-
-        setIncompleteTasks(incomplete);
-        setCompletedTasks(completed);
-      } catch (error) {
-        console.error("❌ Error loading tasks:", error);
-        setError(error.message || "Failed to load tasks");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (user) {
-      console.log("👤 User found, loading tasks...");
-      loadTasks();
-    } else {
-      console.log("⚠️ No user found, skipping task load");
-      setLoading(false);
-    }
-  }, [user]);
-
-  // UI: map of ids that are playing the complete animation (task level)
-  const [animatingCompleteIds, setAnimatingCompleteIds] = useState({});
-  const startComplete = (id) => {
-    setAnimatingCompleteIds((m) => (m[id] ? m : { ...m, [id]: true }));
-    // 立即将复选框视觉置为勾选
-    setCheckedMap((prev) => ({ ...prev, [id]: true }));
-  };
-  const finalizeComplete = (id) => {
-    // 从未完成中移除并加入已完成
-    setIncompleteTasks((list) => {
-      const idx = list.findIndex((t) => t.id === id);
-      if (idx === -1) return list;
-      const task = list[idx];
-      // 防重：只在未存在时加入 completed
-      setCompletedTasks((done) =>
-        done.some((t) => t.id === id) ? done : [...done, { ...task }]
-      );
-      const next = [...list.slice(0, idx), ...list.slice(idx + 1)];
-      return next;
-    });
-    // 清除该任务的勾选视觉状态，避免回到未完成后仍为选中
-    setCheckedMap((m) => {
-      const n = { ...m };
-      delete n[id];
-      return n;
-    });
-    setAnimatingCompleteIds((m) => {
-      const n = { ...m };
-      delete n[id];
-      return n;
-    });
-  };
-
-  // UI: subtasks animation + completion state (per subKey)
-  const [animatingSubIds, setAnimatingSubIds] = useState({});
-  const [completedSubMap, setCompletedSubMap] = useState({});
-  const startSubAnimate = (subKey) => {
-    setAnimatingSubIds((m) => (m[subKey] ? m : { ...m, [subKey]: true }));
-  };
-  const finalizeSubAnimate = (subKey) => {
-    setAnimatingSubIds((m) => {
-      const n = { ...m };
-      delete n[subKey];
-      return n;
-    });
-    setCompletedSubMap((m) => ({ ...m, [subKey]: true }));
-  };
-
+  const [saving, setSaving] = useState(false);
+  const [reload, setReload] = useState(0);
+  const [query, setQuery] = useState("");
   const [showCompleted, setShowCompleted] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [newTask, setNewTask] = useState({
-    title: "",
-    description: "",
-    priority: "Medium",
-    subtasks: [],
-  });
-  const [showSubtasks, setShowSubtasks] = useState(false);
+  const [draft, setDraft] = useState(null);
+  const [isNew, setIsNew] = useState(false);
+  const [deletingTask, setDeletingTask] = useState(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [reminderDate, setReminderDate] = useState(new Date());
-  const [reminderTime, setReminderTime] = useState({ hour: 15, minute: 48 });
+  const [reminderTime, setReminderTime] = useState({ hour: 9, minute: 0 });
   const [repeatOption, setRepeatOption] = useState("不重复");
+  const [scrollPositions, setScrollPositions] = useState({ date: 0, hour: 0, minute: 0 });
+  const REM_ITEM_H = 40;
+  const dateRef = useRef(null);
+  const hourRef = useRef(null);
+  const minuteRef = useRef(null);
+  const scrollTimers = useRef({ date: null, hour: null, minute: null });
+  const operationRef = useRef(null);
+  const currentUser = useRef(user?.id);
+  currentUser.current = user?.id;
 
-  // UI state: checkbox for tasks
-  const [checkedMap, setCheckedMap] = useState({});
+  useEffect(() => {
+    let cancelled = false;
+    setTasks([]);
+    setDraft(null);
+    setDeletingTask(null);
+    setShowReminderModal(false);
+    setError(null);
+    setLoading(true);
+    setSaving(false);
+    operationRef.current = null;
+    const load = async () => {
+      try {
+        const userId = user?.id;
+        const data = userId ? await getTasks() : [];
+        if (!cancelled && currentUser.current === userId) setTasks(data.map(formatTaskForUI));
+      } catch (err) {
+        if (!cancelled) setError(err.message || "Failed to load tasks");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; operationRef.current = null; };
+  }, [user?.id, reload]);
 
-  // Demo tester state for strike-through animation
-  const [demoAnim, setDemoAnim] = useState({
-    animating: false,
-    completed: false,
-  });
-  const runDemo = () => setDemoAnim({ animating: true, completed: false });
-  const resetDemo = () => setDemoAnim({ animating: false, completed: false });
-  const onDemoEnd = () =>
-    setDemoAnim((s) =>
-      s.animating ? { animating: false, completed: true } : s
-    );
-
-  // Track scroll positions for dynamic highlighting
-  const [scrollPositions, setScrollPositions] = useState({
-    date: 0,
-    hour: 0,
-    minute: 0,
-  });
-
-  // Reminder modal scrolling helpers
-  const REM_ITEM_H = 40; // px height per row
-  const dateRef = React.useRef(null);
-  const hourRef = React.useRef(null);
-  const minuteRef = React.useRef(null);
-  const scrollTimers = React.useRef({ date: null, hour: null, minute: null });
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingTask, setEditingTask] = useState(null);
-
-  // Helper function to get priority color
-  const getPriorityColor = (priority) => {
-    switch (priority.toLowerCase()) {
-      case "high":
-        return "text-red-600";
-      case "medium":
-        return "text-yellow-600";
-      case "low":
-        return "text-green-600";
-      default:
-        return "text-gray-600";
+  // A ref blocks even a second click in the same render, before state updates.
+  const mutate = async (action) => {
+    if (operationRef.current || loading || !user?.id) return;
+    const token = {};
+    const userId = user.id;
+    operationRef.current = token;
+    setSaving(true);
+    setError(null);
+    try {
+      const apply = await action();
+      if (operationRef.current === token && currentUser.current === userId) apply();
+    } catch (err) {
+      if (operationRef.current === token && currentUser.current === userId) {
+        setError(err.message || "Could not save the change. Please retry.");
+      }
+    } finally {
+      if (operationRef.current === token) {
+        operationRef.current = null;
+        setSaving(false);
+      }
     }
   };
-
-  const handleSignOut = async () => {
-    await signOut();
-  };
-
-  const handleAddTask = () => {
-    setShowAddModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowAddModal(false);
-    setShowSubtasks(false);
-    setNewTask({
-      title: "",
-      description: "",
-      priority: "Medium",
-      subtasks: [],
+  const replaceTask = (saved) => setTasks((list) => {
+    const task = formatTaskForUI(saved);
+    return list.some((item) => item.id === task.id)
+      ? list.map((item) => item.id === task.id ? task : item)
+      : [task, ...list];
+  });
+  const handleSave = (event) => {
+    event.preventDefault();
+    mutate(async () => {
+      const saved = await saveTask(draft, isNew);
+      return () => { replaceTask(saved); setDraft(null); setShowReminderModal(false); };
     });
   };
-
-  const handleSubmitTask = async (e) => {
-    e.preventDefault();
-    if (!newTask.title.trim()) return;
-
-    try {
-      console.log("🚀 Creating new task:", newTask);
-
-      // Create the main task
-      const createdTask = await createTask(
-        {
-          title: newTask.title,
-          description: newTask.description,
-          priority: newTask.priority,
-          reminder_date: reminderDate
-            ? reminderDate.toISOString().split("T")[0]
-            : null,
-          reminder_time: reminderTime
-            ? `${reminderTime.hour
-                .toString()
-                .padStart(2, "0")}:${reminderTime.minute
-                .toString()
-                .padStart(2, "0")}`
-            : null,
-        },
-        user.id
-      );
-
-      console.log("✅ Task created:", createdTask);
-
-      // Create subtasks if any
-      if (newTask.subtasks && newTask.subtasks.length > 0) {
-        const subtaskPromises = newTask.subtasks
-          .filter((st) => st.title.trim()) // Only create non-empty subtasks
-          .map((st) =>
-            createSubtask(createdTask.id, {
-              title: st.title,
-              is_completed: false,
-            })
-          );
-
-        await Promise.all(subtaskPromises);
-        console.log("✅ Subtasks created");
-      }
-
-      // Reload tasks to get updated data
-      const updatedTasks = await getTasks();
-      const formattedTasks = updatedTasks.map(formatTaskForUI);
-      const incomplete = formattedTasks.filter((task) => !task.isCompleted);
-      setIncompleteTasks(incomplete);
-
-      handleCloseModal();
-    } catch (error) {
-      console.error("❌ Failed to create task:", error);
-      setError(error.message || "Failed to create task");
-    }
+  const handleToggle = (task) => mutate(async () => {
+    const saved = await updateTask(task.id, { is_completed: !task.isCompleted });
+    return () => setTasks((list) => list.map((item) => item.id === task.id ? { ...item, isCompleted: !!saved.is_completed } : item));
+  });
+  const handleToggleSub = (task, sub) => mutate(async () => {
+    const saved = await updateSubtask(sub.id, { is_completed: !sub.isCompleted });
+    return () => setTasks((list) => list.map((item) => item.id === task.id ? {
+      ...item, subtasks: item.subtasks.map((child) => child.id === sub.id ? { ...child, isCompleted: !!saved.is_completed } : child),
+    } : item));
+  });
+  const handleDelete = () => mutate(async () => {
+    const id = deletingTask.id;
+    await deleteTask(id);
+    return () => { setTasks((list) => list.filter((task) => task.id !== id)); setDeletingTask(null); };
+  });
+  const closeEditor = () => { if (!operationRef.current) { setDraft(null); setShowReminderModal(false); setError(null); } };
+  const openEditor = (task = null) => {
+    if (operationRef.current) return;
+    setError(null);
+    setIsNew(!task);
+    setDraft(task ? { ...task, subtasks: task.subtasks.map((sub) => ({ ...sub })) } : emptyDraft());
   };
-
-  const handleInputChange = (field, value) => {
-    setNewTask((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleAddSubtask = () => {
-    setShowSubtasks(true);
-    setNewTask((prev) => ({
-      ...prev,
-      subtasks: [...prev.subtasks, { id: Date.now(), title: "" }],
-    }));
-  };
-
-  const handleSubtaskChange = (subtaskId, value) => {
-    setNewTask((prev) => ({
-      ...prev,
-      subtasks: prev.subtasks.map((subtask) =>
-        subtask.id === subtaskId ? { ...subtask, title: value } : subtask
-      ),
-    }));
-  };
-
-  const handleRemoveSubtask = (subtaskId) => {
-    setNewTask((prev) => ({
-      ...prev,
-      subtasks: prev.subtasks.filter((subtask) => subtask.id !== subtaskId),
-    }));
-
-    // Hide subtasks section if no subtasks remain
-    if (newTask.subtasks.length <= 1) {
-      setShowSubtasks(false);
-    }
-  };
-
+  const handleSignOut = () => signOut();
   const handleOpenReminderModal = () => {
+    const date = draft.reminderDate ? new Date(`${draft.reminderDate}T00:00:00`) : new Date();
+    const [hour, minute] = (draft.reminderClock || "09:00").split(":").map(Number);
+    setReminderDate(date);
+    setReminderTime({ hour, minute });
+    setRepeatOption(draft.repeatOption || "不重复");
     setShowReminderModal(true);
   };
-
-  const handleCloseReminderModal = () => {
-    setShowReminderModal(false);
-  };
-
+  const handleCloseReminderModal = () => setShowReminderModal(false);
   const handleConfirmReminder = () => {
-    // Here you would save the reminder settings
-    console.log("Reminder set:", { reminderDate, reminderTime, repeatOption });
+    // Use local calendar fields, never UTC conversion (which can shift the day).
+    const date = `${reminderDate.getFullYear()}-${String(reminderDate.getMonth() + 1).padStart(2, "0")}-${String(reminderDate.getDate()).padStart(2, "0")}`;
+    const time = `${String(reminderTime.hour).padStart(2, "0")}:${String(reminderTime.minute).padStart(2, "0")}`;
+    setDraft((value) => ({ ...value, reminderDate: date, reminderClock: time, repeatOption }));
     setShowReminderModal(false);
   };
-
   // Helper function to generate date options
   const generateDateOptions = () => {
     const dates = [];
@@ -592,82 +491,18 @@ const Tasks = () => {
     return indexFromScrollTop(scrollTop);
   };
 
-  const handleEditTask = (task) => {
-    setEditingTask({
-      ...task,
-      subtasks: task.subtasks || [],
-    });
-    setShowEditModal(true);
-    setShowSubtasks(task.subtasks && task.subtasks.length > 0);
-  };
 
-  const handleCloseEditModal = () => {
-    setShowEditModal(false);
-    setEditingTask(null);
-    setShowSubtasks(false);
-  };
+  useEffect(() => () => {
+    Object.values(scrollTimers.current).forEach(clearTimeout);
+    Object.values(rafIds.current).forEach((id) => { if (id) cancelAnimationFrame(id); });
+  }, []);
 
-  const handleUpdateTask = (e) => {
-    e.preventDefault();
-    if (editingTask && editingTask.title.trim()) {
-      // Here you would typically update the task in your backend
-      console.log("Updated task:", editingTask);
-      handleCloseEditModal();
-    }
-  };
-
-  const handleEditInputChange = (field, value) => {
-    setEditingTask((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleEditSubtaskChange = (subtaskId, value) => {
-    setEditingTask((prev) => ({
-      ...prev,
-      subtasks: prev.subtasks.map((subtask) =>
-        subtask.id === subtaskId ? { ...subtask, title: value } : subtask
-      ),
-    }));
-  };
-
-  const handleAddEditSubtask = () => {
-    setShowSubtasks(true);
-    setEditingTask((prev) => ({
-      ...prev,
-      subtasks: [...(prev.subtasks || []), { id: Date.now(), title: "" }],
-    }));
-  };
-
-  const handleRemoveEditSubtask = (subtaskId) => {
-    setEditingTask((prev) => ({
-      ...prev,
-      subtasks: prev.subtasks.filter((subtask) => subtask.id !== subtaskId),
-    }));
-
-    // Hide subtasks section if no subtasks remain
-    if (editingTask.subtasks && editingTask.subtasks.length <= 1) {
-      setShowSubtasks(false);
-    }
-  };
-
-  // Add this near the start of your return statement
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-600">Loading tasks...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-600">Error: {error}</div>
-      </div>
-    );
-  }
+  const matching = tasks.filter((task) => `${task.title} ${task.description} ${task.subtasks.map((s) => s.title).join(" ")}`.toLowerCase().includes(query.trim().toLowerCase()));
+  const incompleteTasks = matching.filter((task) => !task.isCompleted);
+  const completedTasks = matching.filter((task) => task.isCompleted);
+  const card = (task) => <TaskCard key={task.id} task={task} busy={saving || !!draft || !!deletingTask}
+    onEdit={openEditor} onToggle={handleToggle} onToggleSub={handleToggleSub}
+    onDelete={(value) => { setError(null); setDeletingTask(value); }} />;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -745,622 +580,46 @@ const Tasks = () => {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 ">
-        {/*task header*/}
-        <div className="flex justify-between items-center py-4">
-          <h1 className="text-2xl font-bold text-gray-900">All Tasks</h1>
-        </div>
-        {/*search and add task*/}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">All Tasks</h1>
+        {error && !draft && !deletingTask && <div role="alert" className="mb-4 p-4 rounded-lg bg-red-50 text-red-700">
+          <p>{error}</p>
+          <button disabled={saving} onClick={() => setReload((value) => value + 1)} className="underline mt-2">Reload tasks</button>
+        </div>}
         <div className="flex items-center gap-4">
-          <div className="relative flex-1 max-w-md">
-            <input
-              type="text"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Search tasks..."
-            />
-            <button className="absolute right-3 top-1/2 transform -translate-y-1/2">
-              <FontAwesomeIcon
-                icon={faSearch}
-                className="w-4 h-4 text-gray-500"
-              />
-            </button>
-          </div>
-          <button
-            onClick={handleAddTask}
-            className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors text-sm whitespace-nowrap"
-          >
-            Add Task
-          </button>
+          <input type="search" aria-label="Search tasks" placeholder="Search tasks..." value={query}
+            onChange={(e) => setQuery(e.target.value)} className={`${controlClass} max-w-md`} />
+          <button disabled={saving || loading} onClick={() => openEditor()} className="bg-gray-600 text-white px-4 py-2 rounded-lg whitespace-nowrap disabled:opacity-50">Add Task</button>
         </div>
-
-        {/* Task List */}
-        <div className="mt-8 space-y-6">
-          {/* Incomplete Tasks */}
-          <div className="space-y-3">
-            {incompleteTasks.map((task) => (
-              <div
-                key={task.id}
-                onClick={() => handleEditTask(task)}
-                className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
-              >
-                <div className="flex items-start space-x-3">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // 如果已在动画中，忽略
-                      if (animatingCompleteIds[task.id]) return;
-                      // 触发完成动画（最终在动画结束时移动到已完成）
-                      startComplete(task.id);
-                    }}
-                    className={`w-5 h-5 rounded mt-1 flex items-center justify-center border-2 transition-colors ${
-                      checkedMap[task.id]
-                        ? "border-blue-500 bg-blue-500 text-white"
-                        : "border-gray-300 bg-white"
-                    }`}
-                    aria-pressed={!!checkedMap[task.id]}
-                  >
-                    {checkedMap[task.id] && (
-                      <FontAwesomeIcon icon={faCheck} className="w-3 h-3" />
-                    )}
-                  </button>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-medium text-gray-900">
-                      <span className="relative inline-block">
-                        <span className="relative z-0">{task.title}</span>
-                        <span
-                          className={`absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] bg-current z-10 origin-left transition-transform duration-300 ${
-                            animatingCompleteIds[task.id]
-                              ? "scale-x-100"
-                              : "scale-x-0"
-                          }`}
-                          onTransitionEnd={() => {
-                            if (animatingCompleteIds[task.id])
-                              finalizeComplete(task.id);
-                          }}
-                          style={{
-                            transform: animatingCompleteIds[task.id]
-                              ? "scaleX(1)"
-                              : "scaleX(0)",
-                          }}
-                        />
-                      </span>
-                    </h3>
-                    {/* Reminder Date & Time*/}
-                    {task.reminderTime && (
-                      <div className="flex items-center space-x-4 mt-1">
-                        <div className="flex items-center space-x-1 text-xs text-gray-400">
-                          <span>{task.reminderTime}</span>
-                          <FontAwesomeIcon
-                            icon={faAlarmClock}
-                            className="w-3 h-3"
-                          />
-                        </div>
-                      </div>
-                    )}
-                    {/* Description */}
-                    {task.description && (
-                      <p className="text-sm text-gray-600 mt-1">
-                        {task.description}
-                      </p>
-                    )}
-                    {task.subtasks && task.subtasks.length > 0 && (
-                      <ul className="mt-2 space-y-1">
-                        {task.subtasks.map((st, i) => {
-                          const subKey = `${task.id}-sub-${st.id || i}`;
-                          const isChecked =
-                            !!checkedMap[subKey] || st.isCompleted;
-                          const label = st.title || st;
-                          return (
-                            <li
-                              key={subKey}
-                              className="text-sm text-gray-500 flex items-center gap-2"
-                            >
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const next = !isChecked;
-                                  setCheckedMap((prev) => ({
-                                    ...prev,
-                                    [subKey]: next,
-                                  }));
-                                  if (next) {
-                                    if (
-                                      !animatingSubIds[subKey] &&
-                                      !completedSubMap[subKey]
-                                    ) {
-                                      startSubAnimate(subKey);
-                                    }
-                                  } else {
-                                    setCompletedSubMap((m) => {
-                                      const n = { ...m };
-                                      delete n[subKey];
-                                      return n;
-                                    });
-                                    setAnimatingSubIds((m) => {
-                                      const n = { ...m };
-                                      delete n[subKey];
-                                      return n;
-                                    });
-                                  }
-                                }}
-                                className={`w-4 h-4 rounded flex items-center justify-center border-2 transition-colors ${
-                                  isChecked
-                                    ? animatingSubIds[subKey] &&
-                                      !completedSubMap[subKey]
-                                      ? "border-blue-500 bg-blue-500 text-white"
-                                      : "border-gray-300 bg-gray-200 text-gray-500"
-                                    : "border-gray-300 bg-white text-gray-400"
-                                }`}
-                                aria-pressed={isChecked}
-                              >
-                                {isChecked && (
-                                  <FontAwesomeIcon
-                                    icon={faCheck}
-                                    className="w-2.5 h-2.5"
-                                  />
-                                )}
-                              </button>
-                              <span className="relative inline-block">
-                                <span
-                                  className={`relative z-0 ${
-                                    isChecked || completedSubMap[subKey]
-                                      ? "line-through text-gray-400"
-                                      : "text-gray-700"
-                                  }`}
-                                >
-                                  {label}
-                                </span>
-                                <span
-                                  className={`absolute left-0 right-0 top-1/2 -translate-y-1/2 h-px bg-current z-10 origin-left ${
-                                    animatingSubIds[subKey]
-                                      ? "transition-transform duration-300 scale-x-100"
-                                      : "transition-none scale-x-0"
-                                  }`}
-                                  onTransitionEnd={() => {
-                                    if (animatingSubIds[subKey])
-                                      finalizeSubAnimate(subKey);
-                                  }}
-                                  style={{
-                                    transform: animatingSubIds[subKey]
-                                      ? "scaleX(1)"
-                                      : "scaleX(0)",
-                                  }}
-                                />
-                              </span>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                    {/* Priority */}
-                    <div className="flex items-center space-x-4 mt-2">
-                      <div
-                        className={`text-sm font-medium ${getPriorityColor(
-                          task.priority
-                        )}`}
-                      >
-                        {task.priority}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Completed Tasks Section */}
+        {saving && <p role="status" className="text-sm text-blue-600 mt-3">Saving changes...</p>}
+        {loading ? <p role="status" className="py-8 text-gray-600">Loading tasks...</p> : <div className="mt-8 space-y-6">
+          {!error && !matching.length && <p className="text-gray-500 py-4">{query.trim() ? "No matching tasks." : "No tasks yet. Add your first task."}</p>}
+          {!error && matching.length > 0 && !incompleteTasks.length && <p className="text-gray-500">No incomplete tasks.</p>}
+          <div className="space-y-3">{incompleteTasks.map(card)}</div>
           <div className="border-t border-gray-200 pt-6">
-            <button
-              onClick={() => setShowCompleted(!showCompleted)}
-              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors mb-4"
-            >
-              <FontAwesomeIcon
-                icon={showCompleted ? faArrowRight : faArrowRight}
-                className={`w-3 h-3 transition-transform ${
-                  showCompleted ? "rotate-90" : ""
-                }`}
-              />
-              <span className="text-sm font-medium">
-                {completedTasks.length} Completed
-              </span>
+            <button onClick={() => setShowCompleted(!showCompleted)} aria-expanded={showCompleted} className="text-gray-600 mb-4">
+              <FontAwesomeIcon icon={faArrowRight} className={`w-3 h-3 mr-2 ${showCompleted ? "rotate-90" : ""}`} />
+              {completedTasks.length} Completed
             </button>
-
-            {showCompleted && (
-              <div className="space-y-3">
-                {completedTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="bg-gray-50 p-4 rounded-lg border border-gray-200"
-                  >
-                    <div className="flex items-start space-x-3">
-                      <button
-                        onClick={() => {
-                          // move back to incomplete
-                          setCompletedTasks((list) =>
-                            list.filter((t) => t.id !== task.id)
-                          );
-                          setIncompleteTasks((list) => {
-                            // 防重：若已存在则不重复插入
-                            if (list.some((t) => t.id === task.id)) return list;
-                            return [...list, { ...task }];
-                          });
-                          // 清除该任务的勾选视觉状态
-                          setCheckedMap((m) => {
-                            const n = { ...m };
-                            delete n[task.id];
-                            return n;
-                          });
-                        }}
-                        className="w-5 h-5 rounded flex items-center justify-center border-2 border-gray-300 bg-white mt-1 text-gray-500"
-                        aria-label="Mark as incomplete"
-                      >
-                        <FontAwesomeIcon icon={faCheck} className="w-3 h-3" />
-                      </button>
-                      <div className="flex-1">
-                        <h3 className="text-lg font-medium text-gray-500 line-through">
-                          {task.title}
-                        </h3>
-                        {task.description && (
-                          <p className="text-sm text-gray-400 mt-1 line-through">
-                            {task.description}
-                          </p>
-                        )}
-                        {/* Priority for completed tasks */}
-                        <div className="flex items-center space-x-4 mt-2">
-                          <div
-                            className={`text-sm font-medium text-gray-400 line-through`}
-                          >
-                            {task.priority}
-                          </div>
-                        </div>
-                        {/* Subtasks for completed tasks */}
-                        {task.subtasks && task.subtasks.length > 0 && (
-                          <ul className="mt-2 space-y-1">
-                            {task.subtasks.map((st, i) => {
-                              const subKey = `${task.id}-done-sub-${
-                                st.id || i
-                              }`;
-                              const label = st.title || st;
-                              return (
-                                <li
-                                  key={subKey}
-                                  className="text-sm text-gray-400 flex items-center gap-2"
-                                >
-                                  <span className="w-3 h-3 rounded border-2 border-gray-300 bg-gray-200 flex items-center justify-center">
-                                    <FontAwesomeIcon
-                                      icon={faCheck}
-                                      className="w-2 h-2 text-gray-500"
-                                    />
-                                  </span>
-                                  <span className="line-through">{label}</span>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            {showCompleted && <div className="space-y-3">{completedTasks.map(card)}</div>}
           </div>
-        </div>
+        </div>}
       </main>
-
-      {/* Add Task Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Add New Task
-              </h2>
-              <button
-                onClick={handleCloseModal}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <FontAwesomeIcon icon={faTimes} className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitTask} className="space-y-4">
-              {/* Task Title */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Task Title *
-                </label>
-                <input
-                  type="text"
-                  value={newTask.title}
-                  onChange={(e) => handleInputChange("title", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter task title..."
-                  required
-                />
-              </div>
-
-              {/* Task Description */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={newTask.description}
-                  onChange={(e) =>
-                    handleInputChange("description", e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter task description..."
-                  rows="3"
-                />
-              </div>
-
-              {/* Subtasks Section */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Subtasks
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleAddSubtask}
-                    className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center space-x-1"
-                  >
-                    <FontAwesomeIcon icon={faPlus} className="w-3 h-3" />
-                    <span>Add Subtask</span>
-                  </button>
-                </div>
-
-                {/* Subtasks List */}
-                {showSubtasks && newTask.subtasks.length > 0 && (
-                  <div className="space-y-2 mb-3">
-                    {newTask.subtasks.map((subtask) => (
-                      <div
-                        key={subtask.id}
-                        className="flex items-center space-x-2"
-                      >
-                        <input
-                          type="text"
-                          value={subtask.title}
-                          onChange={(e) =>
-                            handleSubtaskChange(subtask.id, e.target.value)
-                          }
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Enter subtask..."
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveSubtask(subtask.id)}
-                          className="text-red-500 hover:text-red-700 p-1"
-                        >
-                          <FontAwesomeIcon icon={faTimes} className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Priority */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Priority
-                </label>
-                <div className="relative">
-                  <select
-                    value={newTask.priority}
-                    onChange={(e) =>
-                      handleInputChange("priority", e.target.value)
-                    }
-                    className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-                  >
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                  </select>
-                  <FontAwesomeIcon
-                    icon={faFlag}
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
-                  />
-                </div>
-              </div>
-
-              {/* Modal Actions */}
-              <div className="flex justify-between items-center pt-4">
-                {/* Set Reminder - Bottom Left */}
-                <button
-                  type="button"
-                  onClick={handleOpenReminderModal}
-                  className="flex items-center space-x-2 px-2 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 text-sm"
-                >
-                  <FontAwesomeIcon icon={faBell} className="w-4 h-4" />
-                  <span>Set Reminder</span>
-                </button>
-
-                {/* Action Buttons - Bottom Right */}
-                <div className="flex space-x-3">
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Add Task
-                  </button>
-                </div>
-              </div>
-            </form>
+      {draft && <TaskEditor draft={draft} isNew={isNew} saving={saving} error={error}
+        onChange={(updates) => setDraft((value) => ({ ...value, ...updates }))}
+        onClose={closeEditor} onSave={handleSave} onReminder={handleOpenReminderModal} reminderOpen={showReminderModal}
+        onClearReminder={() => setDraft((value) => ({ ...value, reminderDate: "", reminderClock: "", repeatOption: "不重复" }))} />}
+      {deletingTask && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div role="dialog" aria-modal="true" aria-labelledby="delete-task-title" className="bg-white rounded-lg p-6 max-w-md w-full">
+          <h2 id="delete-task-title" className="text-xl font-semibold">Delete task?</h2>
+          <p className="my-4 break-words">“{deletingTask.title}” and all its subtasks will be deleted.</p>
+          {error && <p role="alert" className="text-red-700 mb-4">{error}</p>}
+          <div className="flex justify-end gap-3">
+            <button autoFocus disabled={saving} onClick={() => { setDeletingTask(null); setError(null); }} className="px-4 py-2 border rounded-lg">Cancel</button>
+            <button disabled={saving} onClick={handleDelete} className="px-4 py-2 bg-red-600 text-white rounded-lg">{saving ? "Deleting..." : "Delete"}</button>
           </div>
         </div>
-      )}
-
-      {/* Edit Task Modal */}
-      {showEditModal && editingTask && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Edit Task</h2>
-              <button
-                onClick={handleCloseEditModal}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <FontAwesomeIcon icon={faTimes} className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleUpdateTask} className="space-y-4">
-              {/* Task Title */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Task Title *
-                </label>
-                <input
-                  type="text"
-                  value={editingTask.title}
-                  onChange={(e) =>
-                    handleEditInputChange("title", e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter task title..."
-                  required
-                />
-              </div>
-
-              {/* Task Description */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={editingTask.description}
-                  onChange={(e) =>
-                    handleEditInputChange("description", e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter task description..."
-                  rows="3"
-                />
-              </div>
-
-              {/* Subtasks Section */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Subtasks
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleAddEditSubtask}
-                    className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center space-x-1"
-                  >
-                    <FontAwesomeIcon icon={faPlus} className="w-3 h-3" />
-                    <span>Add Subtask</span>
-                  </button>
-                </div>
-
-                {/* Subtasks List */}
-                {showSubtasks &&
-                  editingTask.subtasks &&
-                  editingTask.subtasks.length > 0 && (
-                    <div className="space-y-2 mb-3">
-                      {editingTask.subtasks.map((subtask) => (
-                        <div
-                          key={subtask.id}
-                          className="flex items-center space-x-2"
-                        >
-                          <input
-                            type="text"
-                            value={subtask.title}
-                            onChange={(e) =>
-                              handleEditSubtaskChange(
-                                subtask.id,
-                                e.target.value
-                              )
-                            }
-                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Enter subtask..."
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveEditSubtask(subtask.id)}
-                            className="text-red-500 hover:text-red-700 p-1"
-                          >
-                            <FontAwesomeIcon
-                              icon={faTimes}
-                              className="w-4 h-4"
-                            />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-              </div>
-
-              {/* Priority */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Priority
-                </label>
-                <div className="relative">
-                  <select
-                    value={editingTask.priority}
-                    onChange={(e) =>
-                      handleEditInputChange("priority", e.target.value)
-                    }
-                    className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-                  >
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                  </select>
-                  <FontAwesomeIcon
-                    icon={faFlag}
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
-                  />
-                </div>
-              </div>
-
-              {/* Modal Actions */}
-              <div className="flex justify-between items-center pt-4">
-                {/* Set Reminder - Bottom Left */}
-                <button
-                  type="button"
-                  onClick={handleOpenReminderModal}
-                  className="flex items-center space-x-2 px-2 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 text-sm"
-                >
-                  <FontAwesomeIcon icon={faBell} className="w-4 h-4" />
-                  <span>Set Reminder</span>
-                </button>
-
-                {/* Action Buttons - Bottom Right */}
-                <div className="flex space-x-3">
-                  <button
-                    type="button"
-                    onClick={handleCloseEditModal}
-                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Update Task
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
+      </div>}
       {/*Reminder Modal*/}
       {showReminderModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -1375,7 +634,7 @@ const Tasks = () => {
               }
             `}
           </style>
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm mx-4">
+          <div role="dialog" aria-modal="true" aria-label="Reminder time" className="bg-white rounded-2xl p-6 w-full max-w-sm mx-4">
             {/* Modal Header */}
             <div className="text-center mb-6">
               <h2 className="text-lg font-medium text-gray-900 mb-2">
@@ -1511,6 +770,8 @@ const Tasks = () => {
             <div className="flex justify-between items-center mb-8">
               <span className="text-gray-700 font-medium">重复提醒</span>
               <select
+                disabled
+                title="Recurring notifications are not available yet"
                 value={repeatOption}
                 onChange={(e) => setRepeatOption(e.target.value)}
                 className="text-gray-600 bg-transparent border-none outline-none"

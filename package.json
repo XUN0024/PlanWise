@@ -10,7 +10,7 @@
     "dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && npm run electron-dev\"",
     "dev-desktop": "concurrently \"npm start\" \"wait-on http://localhost:3000 && npm run electron-dev\" --kill-others-on-fail",
     "desktop-only": "concurrently \"npm run start -- --open=false\" \"wait-on http://localhost:3000 && npm run electron-dev\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test"
   },
   "repository": {
     "type": "git",

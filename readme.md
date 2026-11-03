@@ -1,3 +1,4 @@
+【Paused】
 # 🗂️ Planwise App
 
 **An all-in-one personal planner, finance tracker, and productivity dashboard.**  

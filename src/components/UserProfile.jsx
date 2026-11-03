@@ -110,12 +110,6 @@ const UserProfile = () => {
               <span className="text-sm text-gray-900">{userProfile.email}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm font-medium text-gray-600">Password (stored):</span>
-              <span className="text-sm text-gray-900">
-                {userProfile.password ? '••••••••' : 'Not stored'}
-              </span>
-            </div>
-            <div className="flex justify-between">
               <span className="text-sm font-medium text-gray-600">Avatar:</span>
               <span className="text-sm text-gray-900">
                 {userProfile.avatar_url ? 'Set' : 'Not set'}

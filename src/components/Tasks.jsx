@@ -1,5 +1,14 @@
-import React, { useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import {
+  getTasks,
+  createTask,
+  updateTask,
+  deleteTask,
+  createSubtask,
+  updateSubtask,
+  deleteSubtask,
+} from "../services/taskService";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTasks,
@@ -28,75 +37,82 @@ import { useTranslation } from "react-i18next";
 const Tasks = () => {
   const { user, signOut } = useAuth();
   const { t } = useTranslation();
-
   // Sample task data - you can replace this with data from your backend
-  const [incompleteTasks, setIncompleteTasks] = useState([
-    {
-      id: 1,
-      title: "tasks 3",
-      description: "Complete project documentation",
-      priority: "High",
-      subtasks: [
-        { id: 1, title: "Draft outline", isCompleted: false },
-        { id: 2, title: "Collect screenshots", isCompleted: false },
-        { id: 3, title: "Review with team", isCompleted: true },
-      ],
-      reminderTime: "14 August 15:48",
-      createdAt: "2025-08-14 15:48:00",
-    },
-    {
-      id: 2,
-      title: "tasks 2",
-      description: "Review code changes",
-      priority: "Medium",
-      subtasks: [
-        { id: 1, title: "Draft outline", isCompleted: false },
-        { id: 2, title: "Collect screenshots", isCompleted: false },
-        { id: 3, title: "Review with team", isCompleted: true },
-      ],
-      createdAt: "2025-08-14 15:48:00",
-    },
-    {
-      id: 3,
-      title: "tasks 1",
-      description: "Update user interface",
-      priority: "Low",
-      subtasks: [
-        { id: 1, title: "Draft outline", isCompleted: false },
-        { id: 2, title: "Collect screenshots", isCompleted: false },
-        { id: 3, title: "Review with team", isCompleted: true },
-      ],
-      createdAt: "2025-08-14 15:48:00",
-    },
-  ]);
+  const [incompleteTasks, setIncompleteTasks] = useState([]);
+  const [completedTasks, setCompletedTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [completedTasks, setCompletedTasks] = useState([
-    {
-      id: 4,
-      title: "tasks 0",
-      description: "Set up development environment",
-      priority: "High",
-      subtasks: [
-        { id: 1, title: "Draft outline", isCompleted: false },
-        { id: 2, title: "Collect screenshots", isCompleted: false },
-        { id: 3, title: "Review with team", isCompleted: true },
-      ],
-      reminderTime: "14 August 15:48",
-      createdAt: "2025-08-14 15:48:00",
-    },
-    {
-      id: 5,
-      title: "tasks 4",
-      description: "Create initial project structure",
-      priority: "Medium",
-      subtasks: [
-        { id: 1, title: "Draft outline", isCompleted: false },
-        { id: 2, title: "Collect screenshots", isCompleted: false },
-        { id: 3, title: "Review with team", isCompleted: true },
-      ],
-      createdAt: "2025-08-14 15:48:00",
-    },
-  ]);
+  const [error, setError] = useState(null);
+
+  // Helper function to format database data for UI
+  const formatTaskForUI = (dbTask) => {
+    return {
+      id: dbTask.id,
+      title: dbTask.title,
+      description: dbTask.description || "",
+      priority: dbTask.priority || "Medium",
+      isCompleted: dbTask.is_completed || false,
+      createdAt: dbTask.created_at,
+      reminderTime:
+        dbTask.reminder_date && dbTask.reminder_time
+          ? `${new Date(dbTask.reminder_date).toLocaleDateString()} ${
+              dbTask.reminder_time
+            }`
+          : null,
+      subtasks: (dbTask.subtasks || []).map((sub) => ({
+        id: sub.id,
+        title: sub.title,
+        isCompleted: sub.is_completed || false,
+      })),
+    };
+  };
+
+  //load tasks when component mounts
+  useEffect(() => {
+    const loadTasks = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        console.log("🔄 Loading tasks for user:", user?.id);
+        const tasks = await getTasks();
+        console.log("✅ Tasks loaded successfully:", tasks);
+
+        // Debug: Log first task structure
+        if (tasks.length > 0) {
+          console.log("🔍 First task structure:", tasks[0]);
+          console.log("🔍 First task subtasks:", tasks[0].subtasks);
+        }
+
+        // Format tasks for UI
+        const formattedTasks = tasks.map(formatTaskForUI);
+        console.log("🎨 Formatted tasks:", formattedTasks);
+
+        // Separate completed and incomplete tasks
+        const incomplete = formattedTasks.filter((task) => !task.isCompleted);
+        const completed = formattedTasks.filter((task) => task.isCompleted);
+
+        console.log("📊 Incomplete tasks:", incomplete.length);
+        console.log("✅ Completed tasks:", completed.length);
+
+        setIncompleteTasks(incomplete);
+        setCompletedTasks(completed);
+      } catch (error) {
+        console.error("❌ Error loading tasks:", error);
+        setError(error.message || "Failed to load tasks");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      console.log("👤 User found, loading tasks...");
+      loadTasks();
+    } else {
+      console.log("⚠️ No user found, skipping task load");
+      setLoading(false);
+    }
+  }, [user]);
 
   // UI: map of ids that are playing the complete animation (task level)
   const [animatingCompleteIds, setAnimatingCompleteIds] = useState({});
@@ -224,13 +240,60 @@ const Tasks = () => {
     });
   };
 
-  const handleSubmitTask = (e) => {
+  const handleSubmitTask = async (e) => {
     e.preventDefault();
-    if (newTask.title.trim()) {
-      // Here you would typically add the task to your backend
-      // For now, we'll just close the modal
-      console.log("New task:", newTask);
+    if (!newTask.title.trim()) return;
+
+    try {
+      console.log("🚀 Creating new task:", newTask);
+
+      // Create the main task
+      const createdTask = await createTask(
+        {
+          title: newTask.title,
+          description: newTask.description,
+          priority: newTask.priority,
+          reminder_date: reminderDate
+            ? reminderDate.toISOString().split("T")[0]
+            : null,
+          reminder_time: reminderTime
+            ? `${reminderTime.hour
+                .toString()
+                .padStart(2, "0")}:${reminderTime.minute
+                .toString()
+                .padStart(2, "0")}`
+            : null,
+        },
+        user.id
+      );
+
+      console.log("✅ Task created:", createdTask);
+
+      // Create subtasks if any
+      if (newTask.subtasks && newTask.subtasks.length > 0) {
+        const subtaskPromises = newTask.subtasks
+          .filter((st) => st.title.trim()) // Only create non-empty subtasks
+          .map((st) =>
+            createSubtask(createdTask.id, {
+              title: st.title,
+              is_completed: false,
+            })
+          );
+
+        await Promise.all(subtaskPromises);
+        console.log("✅ Subtasks created");
+      }
+
+      // Reload tasks to get updated data
+      const updatedTasks = await getTasks();
+      const formattedTasks = updatedTasks.map(formatTaskForUI);
+      const incomplete = formattedTasks.filter((task) => !task.isCompleted);
+      setIncompleteTasks(incomplete);
+
       handleCloseModal();
+    } catch (error) {
+      console.error("❌ Failed to create task:", error);
+      setError(error.message || "Failed to create task");
     }
   };
 
@@ -588,6 +651,23 @@ const Tasks = () => {
       setShowSubtasks(false);
     }
   };
+
+  // Add this near the start of your return statement
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-gray-600">Loading tasks...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-red-600">Error: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

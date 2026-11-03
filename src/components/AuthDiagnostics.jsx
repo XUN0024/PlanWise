@@ -109,13 +109,6 @@ const AuthDiagnostics = () => {
         }
       }
 
-      // Test 6: Check pending data
-      const pendingData = localStorage.getItem('pendingUserData');
-      results.pendingData = {
-        hasPendingData: !!pendingData,
-        data: pendingData ? JSON.parse(pendingData) : null
-      };
-
     } catch (error) {
       results.generalError = error.message;
     }
@@ -223,20 +216,6 @@ const AuthDiagnostics = () => {
             </DiagnosticItem>
           )}
 
-          <DiagnosticItem title="Pending Data" result={diagnostics.pendingData}>
-            <div className="text-sm">
-              {diagnostics.pendingData?.hasPendingData ? (
-                <div>
-                  <p className="text-yellow-600">⚠️ Has pending registration data</p>
-                  <pre className="mt-2 p-2 bg-yellow-50 rounded text-xs">
-                    {JSON.stringify(diagnostics.pendingData.data, null, 2)}
-                  </pre>
-                </div>
-              ) : (
-                <p className="text-gray-600">No pending data</p>
-              )}
-            </div>
-          </DiagnosticItem>
         </div>
       )}
     </div>

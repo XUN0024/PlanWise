@@ -22,6 +22,13 @@ export const AuthProvider = ({ children }) => {
 
   // Initialize auth state
   useEffect(() => {
+    // Remove plaintext registration data left by older versions.
+    try {
+      localStorage.removeItem('pendingUserData');
+    } catch (error) {
+      console.error('Error clearing legacy registration data:', error);
+    }
+
     // Get initial session
     const getInitialSession = async () => {
       try {
@@ -43,7 +50,7 @@ export const AuthProvider = ({ children }) => {
     // Listen for auth changes
     const { data: { subscription } } = authHelpers.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session);
+        console.log('Auth state changed:', event);
         setSession(session);
         setUser(session?.user || null);
         setLoading(false);
@@ -57,24 +64,7 @@ export const AuthProvider = ({ children }) => {
             try {
               console.log('Auto-syncing user data for event:', event);
 
-              // Check for pending user data with password
-              const pendingData = localStorage.getItem('pendingUserData');
-              let fullName = '';
-              let password = '';
-
-              if (pendingData) {
-                try {
-                  const userData = JSON.parse(pendingData);
-                  if (userData.userId === session.user.id) {
-                    fullName = userData.fullName || '';
-                    password = userData.password || '';
-                  }
-                } catch (e) {
-                  console.error('Error parsing pending data:', e);
-                }
-              }
-
-              const result = await authHelpers.syncUserData(session.user, fullName, password);
+              const result = await authHelpers.syncUserData(session.user);
               if (!result.success) {
                 console.error('Auto-sync failed:', result.error);
               } else {

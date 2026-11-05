@@ -20,6 +20,9 @@ function load(file, imports, globals = {}) {
     ...globals,
     require(name) {
       if (name === "../lib/noteColors") return load("src/lib/noteColors.jsx", {});
+      if (name === "../lib/noteRichText") return load("src/lib/noteRichText.jsx", {});
+      if (name === "../lib/tagModel") return load("src/lib/tagModel.jsx", {});
+      if (name === "./noteColors") return load("src/lib/noteColors.jsx", {});
       if (!(name in imports)) throw Error("Unexpected import: " + name);
       return imports[name];
     },
@@ -41,7 +44,7 @@ test("note model maps database fields and round-trips flags and checklist withou
   assert.equal(note.body, row.content);
   assert.equal(note.points[0].done, true);
   assert.equal(note.updatedAt, row.updated_at);
-  assert.deepEqual(plain(note.tags), ["work"]);
+  assert.deepEqual(plain(note.tags), []);
   const payload = service.noteToRow({ ...note, user_id: "untrusted" });
   assert.equal(payload.content, row.content);
   assert.deepEqual(plain(payload.checklist), row.checklist);
@@ -64,7 +67,7 @@ test("nullable legacy fields become safe empty values", () => {
     id: "legacy", tags: [null, "work", "work"],
     checklist: [null, {}, { id: "a", text: "Valid", done: true }, { id: "a", text: "Duplicate" }],
   });
-  assert.deepEqual(plain(malformed.tags), ["work"]);
+  assert.deepEqual(plain(malformed.tags), []);
   assert.deepEqual(plain(malformed.points), [{ id: "a", text: "Valid", done: true }]);
 });
 
@@ -102,6 +105,7 @@ test("sidebar never renders fake notes, pinned entries or tags for an empty acco
   assert.match(html, /disabled/);
   const populated = renderToStaticMarkup(React.createElement(Sidebar, {
     notes: [{ id: "a", title: "Actual title", tags: ["real-tag"], color: "#F59E0B", pinned: true }],
+    tags: [{ id: "t", name: "real-tag", color: "#3B82F6", noteCount: 1 }],
   }));
   assert.match(populated, /Actual title/);
   assert.match(populated, /#real-tag/);
@@ -143,6 +147,18 @@ function page(getNotes, overrides = {}) {
     "./NoteEditor": { __esModule: true, default: "editor" },
     "./NoteContextMenu": { __esModule: true, default: "context-menu" },
     "./NoteAttachments": { __esModule: true, default: "attachments" },
+    "./NoteBody": { __esModule: true, default: "note-body" },
+    "./NoteFormatToolbar": { __esModule: true, default: "format-toolbar" },
+    "./NoteTags": { __esModule: true, default: "note-tags" },
+    "./TagManagerModal": { __esModule: true, default: "tag-manager" },
+    "../services/tagService": {
+      getTagState: async () => ({ tags: [], links: [] }),
+      createTag: async () => ({ tags: [], links: [] }),
+      setNoteTag: async () => ({ tags: [], links: [] }),
+      updateTag: async () => ({ tags: [], links: [] }),
+      deleteTag: async () => ({ tags: [], links: [] }),
+      ...overrides,
+    },
     "../services/attachmentService": { deleteNoteAttachments: overrides.deleteNoteAttachments || (async () => {}) },
     "../services/noteService": {
       getNotes,
@@ -186,9 +202,13 @@ function page(getNotes, overrides = {}) {
     async flush() { await new Promise(setImmediate); render(); },
     sidebar: () => nodes(tree).find((node) => node.type === "sidebar").props,
     editor: () => nodes(tree).find((node) => node.type === "editor")?.props,
+    formatToolbar: () => nodes(tree).find((node) => node.type === "format-toolbar")?.props,
     menu: () => nodes(tree).find((node) => node.type === "context-menu")?.props,
     attachments: () => nodes(tree).find((node) => node.type === "attachments")?.props,
-    text: () => nodes(tree).flatMap((node) => node.props?.children ?? [])
+    tagManager: () => nodes(tree).find((node) => node.type === "tag-manager")?.props,
+    noteTags: () => nodes(tree).find((node) => node.type === "note-tags")?.props
+      || nodes(tree).find((node) => node.type === "editor")?.props.tagControls?.props,
+    text: () => nodes(tree).flatMap((node) => node.type === "note-body" ? [node.props.body] : node.props?.children ?? [])
       .filter((child) => typeof child === "string").join(" "),
     button: (key) => nodes(tree).find((node) => node.type === "button" && node.props.children.includes(key)),
     setUser(next) { user = next; render(); },
@@ -617,6 +637,33 @@ test("autosave waits 800ms after the last edit and keeps the editor open", async
   assert.equal(calls, 1);
 });
 
+test("rich content autosaves with owner/version checks and search uses visible text only", async () => {
+  const rich = load("src/lib/noteRichText.jsx", {});
+  const body = rich.writeNoteDocument({ type: "doc", content: [{ type: "orderedList", content: [{
+    type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "Quarterly review", marks: [{ type: "bold" }] }] }],
+  }] }] });
+  const calls = [];
+  const app = page(async () => [sampleNote()], {
+    updateNote: async (draft, userId, version) => {
+      calls.push({ body: draft.body, userId, version });
+      return { ...draft, updatedAt: "rich-version-2" };
+    },
+  });
+  app.render(); await app.flush(); app.sidebar().onSelect("note-a"); app.render();
+  app.formatToolbar().onFormat("orderedList"); app.render();
+  assert.equal(app.editor().initialFormat, "orderedList");
+  app.editor().onChange({ body }); app.render();
+  app.advance(799); assert.equal(calls.length, 0);
+  app.advance(1); await app.flush();
+  assert.deepEqual(calls, [{ body, userId: "user-a", version: sampleNote().updatedAt }]);
+  assert.equal(app.editor().dirty, false);
+  const notes = app.sidebar().notes;
+  assert.equal(notes[0].body, body);
+  assert.equal(app.filterNotes(notes, "quarterly review").length, 1);
+  assert.equal(app.filterNotes(notes, "orderedList").length, 0);
+  assert.equal(app.filterNotes(notes, "planwise-richtext").length, 0);
+});
+
 test("typing during autosave is retained and the next request uses the returned version", async () => {
   const first = deferred(); const requests = [];
   const app = page(async () => [sampleNote()], {
@@ -719,6 +766,7 @@ test("discard, account switch and unmount cancel pending autosaves", async () =>
 test("Saving indicator keeps text inputs enabled while save/cancel buttons are locked", () => {
   const Editor = load("src/components/NoteEditor.jsx", {
     react: React, "react-i18next": translation,
+    "./NoteRichTextEditor": { __esModule: true, default: ({ children }) => React.createElement("div", null, children) },
   }).default;
   const html = renderToStaticMarkup(React.createElement(Editor, {
     draft: sampleNote(), isNew: false, dirty: true, busy: true, saving: true,
@@ -755,4 +803,106 @@ test("note deletion waits for Storage cleanup; cleanup failure preserves the not
   cleanup.reject(Error("Storage unavailable")); await app.flush();
   assert.equal(deletes, 0);
   assert.equal(app.sidebar().notes.length, 1);
+});
+
+const tagFixture = () => ({
+  tags: [{ id: "tag-work", name: "Work", color: "#3B82F6", updatedAt: "tag-v1" },
+    { id: "tag-empty", name: "Unused", color: "#10B981", updatedAt: "empty-v1" }],
+  links: [{ noteId: "note-a", tagId: "tag-work" }],
+});
+
+test("tag picker persists immediately, holds autosave while pending and preserves newer body edits", async () => {
+  const response = deferred(); const saves = []; let changes = 0;
+  const app = page(async () => [sampleNote()], {
+    getTagState: async () => tagFixture(),
+    setNoteTag: (uid, id, tagId, selected) => {
+      assert.deepEqual([uid, id, tagId, selected], ["user-a", "note-a", "tag-empty", true]);
+      changes++; return response.promise;
+    },
+    updateNote: async (draft) => { saves.push(draft.body); return { ...draft, updatedAt: "version-2", tags: ["stale legacy"] }; },
+  });
+  app.render(); await app.flush(); app.sidebar().onSelect("note-a"); app.render();
+  assert.deepEqual(plain(app.noteTags().selectedIds), ["tag-work"]);
+  app.button("notesPanel.edit").props.onClick(); app.render();
+  app.editor().onChange({ body: "Draft one" }); app.render();
+  const pending = app.noteTags().onToggle("tag-empty", true); app.render();
+  app.noteTags().onToggle("tag-empty", true); assert.equal(changes, 1);
+  app.editor().onChange({ body: "Newer draft" }); app.render(); app.advance(1000);
+  assert.equal(saves.length, 0);
+  assert.equal(app.editor().draft.body, "Newer draft");
+  response.resolve({ ...tagFixture(), links: [...tagFixture().links, { noteId: "note-a", tagId: "tag-empty" }] });
+  assert.equal(await pending, true); await app.flush();
+  app.advance(0); await app.flush();
+  assert.deepEqual(saves, ["Newer draft"]);
+  assert.deepEqual(plain(app.sidebar().notes[0].tags), ["Work", "Unused"]);
+  assert.equal(app.sidebar().tags.find((tag) => tag.id === "tag-empty").noteCount, 1);
+});
+
+test("global rename/color/delete updates all notes and exact ID filtering combines with keyword search", async () => {
+  let state = tagFixture(); state.links.push({ noteId: "note-b", tagId: "tag-work" });
+  const app = page(async () => [sampleNote(), { ...sampleNote(), id: "note-b", title: "Second" }], {
+    getTagState: async () => state,
+    updateTag: async (uid, tag, name, color) => ({ ...state, tags: state.tags.map((item) => item.id === tag.id ? { ...item, name, color } : item) }),
+    deleteTag: async (uid, tag) => ({ tags: state.tags.filter((item) => item.id !== tag.id), links: [] }),
+  });
+  app.render(); await app.flush();
+  app.sidebar().onTagSelect("tag-work"); app.render(); assert.equal(app.sidebar().visibleNotes.length, 2);
+  app.sidebar().onSearchChange("Second"); app.render(); assert.equal(app.sidebar().visibleNotes.length, 1);
+  app.sidebar().onManageTags(); app.render();
+  assert.equal(app.tagManager().tags[0].noteCount, 0); // Unused sorts first.
+  await app.tagManager().onUpdate(state.tags[0], "Renamed", "#EF4444"); await app.flush();
+  assert.equal(app.sidebar().notes.every((note) => note.tags[0] === "Renamed"), true);
+  assert.equal(app.sidebar().tags.find((tag) => tag.id === "tag-work").color, "#EF4444");
+  await app.tagManager().onDelete(state.tags[0]); await app.flush();
+  assert.equal(app.sidebar().selectedTagId, null);
+  assert.equal(app.sidebar().notes.length, 2);
+  assert.equal(app.sidebar().notes.every((note) => note.tags.length === 0), true);
+});
+
+test("tag load errors explain missing SQL, retry only tags and never discard the body draft", async () => {
+  let attempts = 0, noteLoads = 0;
+  const app = page(async () => { noteLoads++; return [sampleNote()]; }, {
+    getTagState: async () => { if (++attempts === 1) throw { code: "PGRST202" }; return tagFixture(); },
+  });
+  app.render(); await app.flush(); assert.match(app.text(), /tagsPanel.setupRequired/);
+  app.sidebar().onSelect("note-a"); app.render(); app.button("notesPanel.edit").props.onClick(); app.render();
+  app.editor().onChange({ body: "Keep draft" }); app.render();
+  app.button("tagsPanel.reload").props.onClick(); app.render(); await app.flush();
+  assert.equal(noteLoads, 1);
+  assert.equal(app.editor().draft.body, "Keep draft");
+  assert.equal(app.noteTags().disabled, false);
+});
+
+test("failed tag changes retain confirmed links and retry; filtering protects dirty drafts", async () => {
+  let calls = 0;
+  const app = page(async () => [sampleNote()], {
+    getTagState: async () => tagFixture(),
+    setNoteTag: async () => { if (++calls === 1) throw Error("Offline"); return { ...tagFixture(), links: [] }; },
+  });
+  app.render(); await app.flush(); app.sidebar().onSelect("note-a"); app.render();
+  assert.equal(await app.noteTags().onToggle("tag-work", false), false); await app.flush();
+  assert.deepEqual(plain(app.noteTags().selectedIds), ["tag-work"]);
+  assert.match(app.text(), /tagsPanel.writeError/);
+  assert.equal(await app.noteTags().onToggle("tag-work", false), true); await app.flush();
+  assert.deepEqual(plain(app.noteTags().selectedIds), []);
+  app.button("notesPanel.edit").props.onClick(); app.render();
+  app.editor().onChange({ body: "Unsaved body" }); app.render();
+  app.sidebar().onTagSelect("tag-empty"); app.render();
+  assert.match(app.text(), /notesPanel.discardTitle/);
+  app.button("notesPanel.keepEditing").props.onClick(); app.render();
+  assert.equal(app.editor().draft.body, "Unsaved body");
+});
+
+test("late tag reads and mutations cannot leak into another account", async () => {
+  const response = deferred(); let loads = 0;
+  const app = page(async () => [sampleNote()], {
+    getTagState: async () => ++loads === 1 ? tagFixture() : { tags: [], links: [] },
+    setNoteTag: () => response.promise,
+  });
+  app.render(); await app.flush(); app.sidebar().onSelect("note-a"); app.render();
+  const pending = app.noteTags().onToggle("tag-empty", true); app.render();
+  app.setUser({ id: "user-b" }); await app.flush();
+  response.resolve(tagFixture()); assert.equal(await pending, false); await app.flush();
+  assert.equal(app.sidebar().tags.length, 0);
+  assert.equal(app.tagManager(), undefined);
 });

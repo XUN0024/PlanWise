@@ -3,6 +3,17 @@
 @tailwind utilities;
 
 /* Custom styles can be added here */
+.note-rich-text { overflow-wrap: anywhere; white-space: pre-wrap; }
+.note-rich-text p { margin: 0.4em 0; }
+.note-rich-text ul, .note-rich-text ol { padding-left: 1.6em; margin: 0.5em 0; }
+.note-rich-text ul { list-style-type: disc; }
+.note-rich-text ol { list-style-type: decimal; }
+.note-rich-text ul ul { list-style-type: circle; }
+.note-rich-text ul ul ul { list-style-type: square; }
+.note-rich-text li > p { margin: 0.15em 0; }
+.note-rich-text strong { font-weight: 700; }
+.note-rich-text em { font-style: italic; }
+.note-rich-text u { text-decoration: underline; }
 @layer components {
   .btn-primary {
     @apply bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;

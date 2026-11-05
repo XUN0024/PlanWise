@@ -17,7 +17,7 @@
 bucket 若已存在，会配置为私有、15MB 上限、暂不限 MIME 类型。
 不要重新执行 fresh_setup.sql。
 
-数据库脚本仅准备存储和关联表；当前前端已接入拖拽、TUS 上传、进度、
+数据库脚本仅准备存储和关联表；当前前端已接入拖拽、标准/TUS 上传、进度、
 图标、鉴权下载及删除清理。附件通过 note_attachments.note_id 关联 notes.id。
 前端仍使用现有 Supabase URL 和 publishable/anon key，无需新增 service-role key。
 

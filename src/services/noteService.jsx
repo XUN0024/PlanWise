@@ -6,9 +6,8 @@ export const noteFromRow = (row) => ({
   id: row.id,
   title: row.title ?? "",
   body: row.content ?? "",
-  tags: Array.isArray(row.tags)
-    ? [...new Set(row.tags.filter((tag) => typeof tag === "string" && tag.trim()))]
-    : [],
+  // Tags are hydrated separately from tags/note_tags, never legacy notes.tags.
+  tags: [],
   starred: row.starred ?? false,
   pinned: row.pinned ?? false,
   color: row.color ?? "#F59E0B",
@@ -28,7 +27,6 @@ export const noteFromRow = (row) => ({
 export const noteToRow = (note) => ({
   title: note.title ?? "",
   content: note.body ?? "",
-  tags: [...new Set(note.tags ?? [])],
   starred: !!note.starred,
   pinned: !!note.pinned,
   color: note.color ?? "#F59E0B",
@@ -41,7 +39,7 @@ export const getNotes = async (userId) => {
   if (!userId) throw new Error("Sign in to view notes");
   const { data, error } = await supabase
     .from("notes")
-    .select("id,title,content,tags,starred,pinned,color,checklist,created_at,updated_at")
+    .select("id,title,content,starred,pinned,color,checklist,created_at,updated_at")
     .eq("user_id", userId) // RLS is still the permission boundary.
     .order("updated_at", { ascending: false })
     .order("id", { ascending: true });

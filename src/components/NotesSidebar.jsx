@@ -8,13 +8,11 @@ export default function NotesSidebar({
   search = "", onSearchChange, loading = false, error = false,
   onNew, busy = false,
   onNoteContextMenu,
+  tags = [], selectedTagId, onTagSelect, onManageTags, tagsLoading, tagsError,
 }) {
   const { t } = useTranslation();
   const [sections, setSections] = useState({ inbox: true, pinned: true, tags: true });
   const pinned = visibleNotes.filter((note) => note.pinned);
-  const tagCounts = new Map();
-  notes.forEach((note) => [...new Set(note.tags)].forEach((tag) => tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1)));
-  const tags = [...tagCounts.entries()].sort(([a], [b]) => a.localeCompare(b));
   const toggle = (key) => setSections((value) => ({ ...value, [key]: !value[key] }));
   const list = (items) => <ul className="px-2 py-1 space-y-1">{items.map((note) =>
     <li key={note.id} className="flex items-center"
@@ -58,10 +56,21 @@ export default function NotesSidebar({
             {sections.inbox && (visibleNotes.length ? list(visibleNotes) : <p className="px-4 py-2 text-sm text-gray-500">{t(notes.length ? "notesPanel.noMatches" : "notesPanel.noNotes")}</p>)}
             <SectionHeader title={t("notesPanel.pinned")} icon={faThumbtack} count={pinned.length} open={sections.pinned} onToggle={() => toggle("pinned")} />
             {sections.pinned && (pinned.length ? list(pinned) : <p className="px-4 py-2 text-sm text-gray-500">{t("notesPanel.noPinned")}</p>)}
-            <SectionHeader title={t("notesPanel.tags")} icon={faTags} count={tags.length} open={sections.tags} onToggle={() => toggle("tags")} />
-            {sections.tags && (tags.length ? <ul className="px-4 py-2 space-y-2 text-sm text-gray-600">
-              {tags.map(([tag, count]) => <li key={tag} className="flex justify-between gap-2">
-                <span className="truncate">#{tag}</span><span>{count}</span>
+            <div className="flex items-center pr-3">
+              <SectionHeader title={t("notesPanel.tags")} icon={faTags} count={tags.length} open={sections.tags} onToggle={() => toggle("tags")} />
+              <button type="button" disabled={busy} onClick={onManageTags} className="mt-4 text-xs text-blue-600 shrink-0 disabled:opacity-40">{t("tagsPanel.manage")}</button>
+            </div>
+            {selectedTagId && <button type="button" disabled={busy} onClick={() => onTagSelect(null)}
+              className="mx-4 my-2 text-xs text-blue-600 underline">{t("tagsPanel.clearFilter")}</button>}
+            {sections.tags && (tagsLoading ? <p role="status" className="px-4 py-2 text-xs text-gray-500">{t("tagsPanel.loading")}</p>
+              : tagsError ? <p className="px-4 py-2 text-xs text-red-700">{t("tagsPanel.unavailable")}</p>
+              : tags.length ? <ul className="px-2 py-2 space-y-1 text-sm text-gray-600">
+              {tags.map((tag) => <li key={tag.id}>
+                <button type="button" disabled={busy} onClick={() => onTagSelect(tag.id)} aria-pressed={selectedTagId === tag.id}
+                  className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-left ${selectedTagId === tag.id ? "bg-blue-50 text-blue-700" : "hover:bg-gray-50"}`}>
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />
+                  <span className="truncate flex-1">#{tag.name}</span><span>{tag.noteCount}</span>
+                </button>
               </li>)}
             </ul> : <p className="px-4 py-2 text-sm text-gray-500">{t("notesPanel.noTags")}</p>)}
           </>}

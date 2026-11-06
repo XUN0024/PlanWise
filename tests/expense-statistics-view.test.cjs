@@ -13,6 +13,7 @@ function load(file){
     if(name==="../contexts/AuthContext")return{useAuth:()=>({user,signOut:async()=>{}})};
     if(name==="../services/expenseService")return service;
     if(name==="./LanguageSwitcher")return{__esModule:true,default:()=>null};
+    if(name==="./ExpenseReceipts")return{__esModule:true,default:()=>null};
     return name.startsWith(".")?load(path.relative(path.resolve(__dirname,".."),path.resolve(path.dirname(filename),name+".jsx"))):require(name);
   };mod._compile(code,filename);cache.set(filename,mod.exports);return mod.exports;
 }

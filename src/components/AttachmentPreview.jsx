@@ -68,7 +68,7 @@ function PdfReader({ source, page, setPage, zoom, fit, onError }) {
   </div>;
 }
 
-export default function AttachmentPreview({ record, userId, onClose }) {
+export default function AttachmentPreview({ record, userId, onClose, downloadFile = downloadAttachment }) {
   const { t } = useTranslation();
   const panel = useRef(null), controls = useRef(null);
   const [blob, setBlob] = useState(null), [source, setSource] = useState(null);
@@ -112,7 +112,7 @@ export default function AttachmentPreview({ record, userId, onClose }) {
     (async () => {
       try {
         if (record.status !== "ready") throw Error("Attachment not ready");
-        const file = await downloadAttachment(record, userId, { signal: abort.signal });
+        const file = await downloadFile(record, userId, { signal: abort.signal });
         if (abort.signal.aborted) return;
         setBlob(file);
         if (kind === "pdf") {
@@ -136,7 +136,7 @@ export default function AttachmentPreview({ record, userId, onClose }) {
       finally { if (!abort.signal.aborted) setLoading(false); }
     })();
     return () => { abort.abort(); if (pdfTask) Promise.resolve(pdfTask.destroy()).catch(() => {}); if (url) URL.revokeObjectURL(url); };
-  }, [record.id, userId, reload, kind]);
+  }, [record.id, userId, reload, kind, downloadFile]);
   useEffect(() => setPageInput(String(page)), [page]);
   const renderError = React.useCallback((failure) => setError(previewErrorKey(failure)), []);
   const save = async () => {

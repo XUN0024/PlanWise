@@ -3,15 +3,17 @@ import { createClient } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { ATTACHMENT_BUCKET, attachmentError, validateAttachmentBatch } from "../lib/attachmentModel";
 
-const assertActive = (signal) => {
+export const assertAttachmentActive = (signal) => {
   if (signal?.aborted) throw attachmentError("ATTACHMENT_CANCELLED");
 };
-const authenticatedSession = async (userId) => {
+const assertActive = assertAttachmentActive;
+export const requireAttachmentSession = async (userId) => {
   const { data, error } = await supabase.auth.getSession();
   if (error) throw error;
   if (!data.session || data.session.user.id !== userId) throw attachmentError("ATTACHMENT_AUTH");
   return data.session;
 };
+const authenticatedSession = requireAttachmentSession;
 const assertRecord = (record, userId, noteId) => {
   if (!record || record.user_id !== userId || record.note_id !== noteId) throw attachmentError("ATTACHMENT_AUTH");
   return record;
@@ -60,7 +62,7 @@ export const resumableEndpoint = (projectUrl) => {
 
 export const uploadTransport = (size) => size <= 6 * 1024 * 1024 ? "standard" : "resumable";
 
-const uploadStandard = async (file, record, userId, signal, onProgress) => {
+const uploadStandard = async (file, record, userId, signal, onProgress, bucket = ATTACHMENT_BUCKET) => {
   const session = await authenticatedSession(userId);
   assertActive(signal);
   // This SDK version does not forward FileOptions.signal. Use a per-request
@@ -73,7 +75,7 @@ const uploadStandard = async (file, record, userId, signal, onProgress) => {
     },
   });
   onProgress?.(null); // Standard SDK upload has no granular progress events.
-  const { error } = await client.storage.from(ATTACHMENT_BUCKET).upload(record.storage_path, file, {
+  const { error } = await client.storage.from(bucket).upload(record.storage_path, file, {
     upsert: false, contentType: file.type || "application/octet-stream", cacheControl: "3600",
   });
   assertActive(signal);
@@ -81,7 +83,7 @@ const uploadStandard = async (file, record, userId, signal, onProgress) => {
   onProgress?.(99);
 };
 
-const uploadResumable = async (file, record, userId, signal, onProgress) => {
+const uploadResumable = async (file, record, userId, signal, onProgress, bucket = ATTACHMENT_BUCKET) => {
   const session = await authenticatedSession(userId);
   assertActive(signal);
   return new Promise((resolve, reject) => {
@@ -103,14 +105,14 @@ const uploadResumable = async (file, record, userId, signal, onProgress) => {
       uploadDataDuringCreation: true,
       retryDelays: [0, 1000, 3000, 5000],
       removeFingerprintOnSuccess: true,
-      fingerprint: async () => ["planwise", userId, record.note_id, record.id, file.size, file.lastModified].join(":"),
+      fingerprint: async () => ["planwise", userId, record.note_id || record.expense_id, record.id, file.size, file.lastModified].join(":"),
       headers: {
         authorization: "Bearer " + session.access_token,
         apikey: process.env.REACT_APP_SUPABASE_ANON_KEY,
         "x-upsert": "false",
       },
       metadata: {
-        bucketName: ATTACHMENT_BUCKET, objectName: record.storage_path,
+        bucketName: bucket, objectName: record.storage_path,
         contentType: file.type || "application/octet-stream", cacheControl: "3600",
       },
       onBeforeRequest: async (request) => {
@@ -132,6 +134,11 @@ const uploadResumable = async (file, record, userId, signal, onProgress) => {
       upload.start();
     }).catch((error) => finish(error));
   });
+};
+
+export const uploadAttachmentBytes = async ({ file, record, userId, signal, onProgress, bucket }) => {
+  const transfer = uploadTransport(file.size) === "standard" ? uploadStandard : uploadResumable;
+  await transfer(file,record,userId,signal,onProgress,bucket);
 };
 
 export const uploadAttachment = async ({ file, noteId, userId, id, signal, onProgress }) => {

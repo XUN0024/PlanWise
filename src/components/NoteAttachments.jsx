@@ -6,7 +6,7 @@ import {
   faFileZipper, faFileAudio, faFileVideo, faFileLines,
 } from "@fortawesome/free-solid-svg-icons";
 import { attachmentDiagnostic, attachmentKind, formatAttachmentSize, isFileDrag, validateAttachmentBatch } from "../lib/attachmentModel";
-import { getAttachments, uploadAttachment, removeAttachment, discardAttachment, downloadAttachment } from "../services/attachmentService";
+import { getAttachments as getNoteAttachments, uploadAttachment as uploadNoteAttachment, removeAttachment as removeNoteAttachment, discardAttachment as discardNoteAttachment, downloadAttachment as downloadNoteAttachment } from "../services/attachmentService";
 import AttachmentPreview from "./AttachmentPreview";
 
 const icons = {
@@ -17,10 +17,17 @@ const errorKey = (error) => ({
   ATTACHMENT_TOO_MANY: "tooMany", ATTACHMENT_TOO_LARGE: "tooLarge",
   ATTACHMENT_EMPTY: "emptyDrop", ATTACHMENT_INVALID_NAME: "invalidName",
   ATTACHMENT_AUTH: "authError", ATTACHMENT_DIRECTORY: "directory",
+  EXPENSE_RECEIPTS_SETUP_REQUIRED: "receiptSetupRequired",
 }[error?.code] || "uploadError");
+const noteServices = {
+  getAttachments:getNoteAttachments,uploadAttachment:({parentId,...options})=>uploadNoteAttachment({...options,noteId:parentId}),
+  removeAttachment:removeNoteAttachment,discardAttachment:discardNoteAttachment,downloadAttachment:downloadNoteAttachment,
+};
 
-export default function NoteAttachments({ noteId, userId, saved, disabled = false, onBusyChange, children }) {
+export default function NoteAttachments({ noteId, userId, saved, disabled = false, onBusyChange, children,
+  services = noteServices, titleKey = "attachments.title", saveFirstKey = "attachments.saveFirst", allowFilePicker = false, ConfirmDialog }) {
   const { t } = useTranslation();
+  const { getAttachments, uploadAttachment, removeAttachment, discardAttachment, downloadAttachment } = services;
   const [records, setRecords] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(!!saved);
@@ -33,6 +40,7 @@ export default function NoteAttachments({ noteId, userId, saved, disabled = fals
   const [reload, setReload] = useState(0);
   const depth = useRef(0);
   const zone = useRef(null);
+  const picker = useRef(null), modal = useRef(false);
   const alive = useRef(true);
   const locked = useRef(false);
   const controller = useRef(null);
@@ -41,7 +49,7 @@ export default function NoteAttachments({ noteId, userId, saved, disabled = fals
   const markBusy = (value) => {
     locked.current = value;
     if (alive.current) setWorking(value);
-    reportBusy.current?.(value);
+    reportBusy.current?.(value || modal.current);
   };
   useEffect(() => {
     alive.current = true;
@@ -77,7 +85,7 @@ export default function NoteAttachments({ noteId, userId, saved, disabled = fals
     }).catch(() => { if (!cancelled) setLoadError(true); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [noteId, userId, saved, reload]);
+  }, [noteId, userId, saved, reload, getAttachments]);
 
   const patchJob = (id, updates) => {
     if (alive.current) setJobs((list) => list.map((job) => job.id === id ? { ...job, ...updates } : job));
@@ -99,7 +107,7 @@ export default function NoteAttachments({ noteId, userId, saved, disabled = fals
         patchJob(job.id, { status: "uploading" });
         try {
           const record = await uploadAttachment({
-            file: job.file, noteId, userId, id: job.id, signal: abort.signal,
+            file: job.file, parentId: noteId, userId, id: job.id, signal: abort.signal,
             onProgress: (progress) => patchJob(job.id, { progress }),
           });
           if (alive.current && !abort.signal.aborted) {
@@ -123,22 +131,25 @@ export default function NoteAttachments({ noteId, userId, saved, disabled = fals
       }
     }
   };
-  const onDrop = (event) => {
-    if (!isFileDrag(event.dataTransfer)) return;
-    event.preventDefault(); event.stopPropagation();
-    depth.current = 0; setDragging(false);
+  const receiveFiles = (files, items = []) => {
     if (!saved || !noteId) { setError("saveFirst"); return; }
     if (locked.current || disabled || deleting || preview || loading) { setError("wait"); return; }
     if (loadError) { setError("loadError"); return; }
     try {
-      if (Array.from(event.dataTransfer.items || []).some((item) => item.webkitGetAsEntry?.()?.isDirectory)) {
+      if (Array.from(items).some((item) => item.webkitGetAsEntry?.()?.isDirectory)) {
         throw { code: "ATTACHMENT_DIRECTORY" };
       }
-      const files = Array.from(event.dataTransfer.files);
       validateAttachmentBatch(files);
       runJobs(files.map((file) => ({ id: crypto.randomUUID(), file })));
     } catch (failure) { setError(errorKey(failure)); }
   };
+  const onDrop = (event) => {
+    if (!isFileDrag(event.dataTransfer)) return;
+    event.preventDefault(); event.stopPropagation();depth.current = 0; setDragging(false);
+    receiveFiles(Array.from(event.dataTransfer.files),event.dataTransfer.items || []);
+  };
+  const openDelete = (target) => { modal.current=true;setDeleting(target);reportBusy.current?.(true); };
+  const closeDelete = () => { if(!locked.current) {modal.current=false;setDeleting(null);reportBusy.current?.(false);} };
   const remove = async (target) => {
     if (locked.current) return;
     markBusy(true); setError(null);
@@ -149,6 +160,7 @@ export default function NoteAttachments({ noteId, userId, saved, disabled = fals
         setRecords((list) => list.filter((item) => item.id !== target.id));
         setJobs((list) => list.filter((item) => item.id !== target.id));
         setDeleting(null);
+        modal.current=false;
       }
     } catch {
       if (alive.current) setError("removeError");
@@ -172,23 +184,37 @@ export default function NoteAttachments({ noteId, userId, saved, disabled = fals
   const fileIcon = (name, mime) => <FontAwesomeIcon icon={icons[attachmentKind(name, mime)]} className="w-6 h-6 text-blue-600 shrink-0" />;
   const jobIds = new Set(jobs.map((job) => job.id));
   const canDrop = saved && !working && !disabled && !deleting && !preview && !loading && !loadError;
+  const confirmation = deleting && <>
+    <p className="my-4 break-words">{deleting.original_name || deleting.file.name}</p>
+    {error && <p role="alert" className="text-sm text-red-700 mb-3">{t("attachments." + error)}</p>}
+    <div className="flex justify-end gap-3">
+      <button type="button" autoFocus disabled={working} onClick={closeDelete}>{t("notesPanel.cancel")}</button>
+      <button type="button" disabled={working} onClick={() => remove(deleting)} className="text-red-600">{t("notesPanel.confirmDelete")}</button>
+    </div>
+  </>;
   return (
     <div ref={zone} className="relative" onDrop={onDrop}
       onDragEnter={(event) => { if (isFileDrag(event.dataTransfer)) { event.preventDefault(); depth.current++; setDragging(true); } }}
       onDragOver={(event) => { if (isFileDrag(event.dataTransfer)) { event.preventDefault(); event.dataTransfer.dropEffect = canDrop ? "copy" : "none"; setDragging(true); } }}
       onDragLeave={(event) => { if (isFileDrag(event.dataTransfer)) { depth.current = Math.max(0, depth.current - 1); if (!depth.current) setDragging(false); } }}>
       {children}
+      {allowFilePicker && <div className="mt-3">
+        <input ref={picker} type="file" multiple hidden aria-label={t("attachments.chooseFiles")} onChange={event=>{
+          const files=Array.from(event.target.files || []);event.target.value="";if(files.length)receiveFiles(files);
+        }} />
+        <button type="button" disabled={!canDrop} onClick={()=>picker.current?.click()} className="text-sm text-blue-600 disabled:opacity-40">{t("attachments.chooseFiles")}</button>
+      </div>}
       {dragging && <div role="status" className="absolute inset-0 z-30 min-h-[160px] pointer-events-none rounded-xl border-2 border-dashed border-blue-500 bg-blue-50/95 flex flex-col items-center justify-center p-6 text-center">
-        <p className="text-xl font-semibold text-blue-700">{t(!saved ? "attachments.saveFirst" : canDrop ? "attachments.dropHere" : "attachments.wait")}</p>
+        <p className="text-xl font-semibold text-blue-700">{t(!saved ? saveFirstKey : canDrop ? "attachments.dropHere" : "attachments.wait")}</p>
         <p className="text-sm text-blue-600 mt-2">{t("attachments.limits")}</p>
       </div>}
       {loadError && <div role="alert" className="mt-4 p-3 bg-red-50 text-red-700 rounded-lg">
         {t("attachments.loadError")} <button disabled={working} onClick={() => setReload((value) => value + 1)} className="underline">{t("notesPanel.retry")}</button>
       </div>}
-      {error && <p role="alert" className="mt-3 text-sm text-red-700">{t("attachments." + error)}</p>}
-      {(records.length > 0 || jobs.length > 0) && <section aria-label={t("attachments.title")} className="mt-5">
+      {error && <p role="alert" className="mt-3 text-sm text-red-700">{t(error==="saveFirst"?saveFirstKey:"attachments." + error)}</p>}
+      {(records.length > 0 || jobs.length > 0) && <section aria-label={t(titleKey)} className="mt-5">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-gray-700">{t("attachments.title")}</h2>
+          <h2 className="text-sm font-semibold text-gray-700">{t(titleKey)}</h2>
           {working && controller.current && <button className="text-sm text-gray-600" onClick={() => {
             controller.current?.abort();
             setJobs((list) => list.map((job) => ["queued", "uploading"].includes(job.status)
@@ -204,9 +230,9 @@ export default function NoteAttachments({ noteId, userId, saved, disabled = fals
                 <p className="text-xs text-gray-500">{formatAttachmentSize(Number(record.size_bytes))}{record.status !== "ready" && " · " + t("attachments.incomplete")}</p>
               </div>
               <button disabled={working || disabled || record.status !== "ready"} onClick={() => {
-                setPreview(record); reportBusy.current?.(true);
+                modal.current=true;setPreview(record); reportBusy.current?.(true);
               }} className="text-xs text-blue-600 disabled:opacity-40">{t("preview.open")}</button>
-              <button disabled={working} onClick={() => setDeleting(record)} className="text-xs text-red-600">{t("notesPanel.delete")}</button>
+              <button disabled={working || disabled} onClick={() => openDelete(record)} className="text-xs text-red-600">{t("notesPanel.delete")}</button>
             </div>
           )}
           {jobs.map((job) => <div key={job.id} className="flex items-center gap-3 min-w-0 rounded-lg border bg-white p-3">
@@ -227,25 +253,20 @@ export default function NoteAttachments({ noteId, userId, saved, disabled = fals
             </div>
             {job.status === "failed" && <div className="flex gap-2 text-xs">
               <button disabled={working} onClick={() => runJobs([job])} className="text-blue-600">{t("notesPanel.retry")}</button>
-              <button disabled={working} onClick={() => setDeleting(job)} className="text-red-600">{t("notesPanel.delete")}</button>
+              <button disabled={working || disabled} onClick={() => openDelete(job)} className="text-red-600">{t("notesPanel.delete")}</button>
             </div>}
           </div>)}
         </div>
       </section>}
-      {preview && <AttachmentPreview key={userId + ":" + preview.id} record={preview} userId={userId} onClose={() => {
-        setPreview(null); reportBusy.current?.(false);
+      {preview && <AttachmentPreview key={userId + ":" + preview.id} record={preview} userId={userId} downloadFile={downloadAttachment} onClose={() => {
+        modal.current=false;setPreview(null); reportBusy.current?.(false);
       }} />}
-      {deleting && <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onContextMenu={(event) => event.preventDefault()}>
+      {deleting && (ConfirmDialog ? <ConfirmDialog role="alertdialog" title={t("attachments.deleteTitle")} onClose={closeDelete}>{confirmation}</ConfirmDialog> : <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onContextMenu={(event) => event.preventDefault()}>
         <section role="alertdialog" aria-modal="true" aria-labelledby="delete-attachment-title" className="bg-white rounded-xl p-6 max-w-md w-full">
           <h2 id="delete-attachment-title" className="font-semibold">{t("attachments.deleteTitle")}</h2>
-          <p className="my-4 break-words">{deleting.original_name || deleting.file.name}</p>
-          {error && <p role="alert" className="text-sm text-red-700 mb-3">{t("attachments." + error)}</p>}
-          <div className="flex justify-end gap-3">
-            <button autoFocus disabled={working} onClick={() => setDeleting(null)}>{t("notesPanel.cancel")}</button>
-            <button disabled={working} onClick={() => remove(deleting)} className="text-red-600">{t("notesPanel.confirmDelete")}</button>
-          </div>
+          {confirmation}
         </section>
-      </div>}
+      </div>)}
     </div>
   );
 }

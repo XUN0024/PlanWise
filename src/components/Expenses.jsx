@@ -7,6 +7,7 @@ import ExpenseEditor from "./ExpenseEditor";
 import ExpenseDialog from "./ExpenseDialog";
 import ExpenseFilters from "./ExpenseFilters";
 import ExpenseStatistics from "./ExpenseStatistics";
+import ExpenseReceipts from "./ExpenseReceipts";
 import { getExpenses, getExpenseStatistics, createExpense, updateExpense, deleteExpense } from "../services/expenseService";
 import { expenseToday, expenseIsDirty, expenseErrorKey, formatExpenseRM, expensePayload } from "../lib/expenseModel";
 import { DEFAULT_EXPENSE_FILTERS, hasExpenseFilters, normalizeExpenseFilters } from "../lib/expenseQuery";
@@ -23,6 +24,8 @@ export default function Expenses() {
   const [editor, setEditor] = useState(null), [deleting, setDeleting] = useState(null);
   const [pending, setPending] = useState(null), [busy, setBusy] = useState(false);
   const [writeError, setWriteError] = useState(null), [notice, setNotice] = useState(null);
+  const [receipts,setReceipts] = useState(null), [receiptBusy,setReceiptBusy] = useState(false);
+  const receiptOperation = useRef(false);
   const operation = useRef(null), currentUser = useRef(user?.id);
   currentUser.current = user?.id;
   const page = view.userId === user?.id ? view.page : 0;
@@ -40,6 +43,7 @@ export default function Expenses() {
     setView({ userId: user?.id, page: 0, filters: { ...DEFAULT_EXPENSE_FILTERS } });
     setDebouncedSearch({ userId: user?.id, value: "" });
     setGranularity("auto"); setStatsRetry(0); setStatistics(null);
+    setReceipts(null); setReceiptBusy(false); receiptOperation.current=false;
     setEditor(null); setDeleting(null); setPending(null); setBusy(false);
     setWriteError(null); setNotice(null); operation.current = null;
     return () => { operation.current = null; };
@@ -78,29 +82,31 @@ export default function Expenses() {
 
   const current = snapshot.userId === user?.id && snapshot.page === page && snapshot.queryKey === queryKey && searchReady ? snapshot
     : { items: [], hasMore: false, loading: !filterError, error: null };
-  const currentStatistics = statistics?.userId === user?.id && statistics.statsKey === statsKey && statistics.granularity === granularity
+  const currentStatistics = statistics && statistics.userId === user?.id && statistics.statsKey === statsKey && statistics.granularity === granularity
     && statistics.revision === reload && statistics.retry === statsRetry && searchReady ? statistics : { data: null, loading: true, error: null };
   const activeEditor = editor?.userId === user?.id ? editor : null;
-  const activeDelete = deleting?.userId === user?.id ? deleting.record : null;
+  const activeDelete = deleting && deleting.userId === user?.id ? deleting.record : null;
   const activePending = pending?.userId === user?.id ? pending : null;
   const dirty = !!activeEditor && expenseIsDirty(activeEditor.draft, activeEditor.base);
   useEffect(() => {
-    if ((!dirty && !busy) || typeof window === "undefined") return;
+    if ((!dirty && !busy && !receiptBusy) || typeof window === "undefined") return;
     const warn = (event) => { event.preventDefault(); event.returnValue = ""; };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty, busy]);
+  }, [dirty, busy, receiptBusy]);
 
   const perform = (action) => {
     setEditor(null); setDeleting(null); setPending(null); setWriteError(null); setNotice(null);
+    setReceipts(null);
     if (action.type === "new") {
       const draft = { id: crypto.randomUUID(), description: "", amount: "", date: expenseToday(), category: "Food", currency: "MYR", time: "", paymentMethod: "" };
       setEditor({ userId: user.id, isNew: true, draft, base: { ...draft } });
-    } else if (action.type === "edit" || action.type === "delete") {
+    } else if (["edit","delete","receipts"].includes(action.type)) {
       const record = current.items.find((item) => item.id === action.id);
       if (!record) return;
       if (action.type === "edit") setEditor({ userId: user.id, isNew: false, draft: { ...record }, base: { ...record } });
-      else setDeleting({ userId: user.id, record });
+      else if (action.type === "delete") setDeleting({ userId: user.id, record });
+      else setReceipts({userId:user.id,record});
     } else if (action.type === "reload") setReload((value) => value + 1);
     else if (action.type === "filters" || action.type === "resetFilters") {
       const nextFilters = action.type === "resetFilters" ? { ...DEFAULT_EXPENSE_FILTERS } : { ...filters, ...action.updates };
@@ -116,27 +122,28 @@ export default function Expenses() {
     }
   };
   const request = (action) => {
-    if (operation.current || !user?.id) return;
+    if (operation.current || receiptOperation.current || !user?.id) return;
     if (current.loading && !["close", "navigate", "signOut", "filters", "resetFilters", "statsRetry", "granularity"].includes(action.type)) return;
     if (dirty) setPending({ ...action, userId: user.id }); else perform(action);
   };
   const navigateHeader = (event) => {
     if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     const link = event.target.closest("a"); if (!link) return;
-    if (dirty || operation.current) {
+    if (dirty || operation.current || receiptOperation.current) {
       event.preventDefault(); event.stopPropagation();
-      if (!operation.current) request({ type: "navigate", to: link.getAttribute("href") });
+      if (!operation.current && !receiptOperation.current) request({ type: "navigate", to: link.getAttribute("href") });
     }
   };
-  const mutate = async (action, success, fallback, resetPage = false) => {
+  const mutate = async (action, success, fallback, resetPage = false, addReceipts = false) => {
     if (operation.current || !user?.id) return;
     const token = {}, userId = user.id;
     operation.current = token; setBusy(true); setWriteError(null); setNotice(null);
     try {
-      await action(userId);
+      const saved = await action(userId);
       if (operation.current !== token || currentUser.current !== userId) return;
       if (resetPage) setPage(0);
       setEditor(null); setDeleting(null); setNotice(success);
+      if(addReceipts) setReceipts({userId,record:saved});
       setReload((value) => value + 1); // Read failure after a committed write is a load error, not a failed save.
     } catch (error) {
       if (operation.current === token && currentUser.current === userId) setWriteError(expenseErrorKey(error, fallback));
@@ -147,10 +154,9 @@ export default function Expenses() {
     if (!activeEditor || operation.current) return;
     try { expensePayload(activeEditor.draft); } catch (error) { setWriteError(expenseErrorKey(error)); return; }
     const submitted = activeEditor;
-    mutate(async (userId) => {
-      if (submitted.isNew) await createExpense(submitted.draft, userId);
-      else await updateExpense(submitted.draft, userId, submitted.base.updatedAt);
-    }, "expensesPanel.saved", "expensesPanel.saveError", submitted.isNew);
+    const addReceipts = event.nativeEvent?.submitter?.value === "receipts";
+    mutate(userId => submitted.isNew ? createExpense(submitted.draft, userId) : updateExpense(submitted.draft, userId, submitted.base.updatedAt),
+      "expensesPanel.saved", "expensesPanel.saveError", submitted.isNew, addReceipts);
   };
   const remove = () => {
     if (activeDelete) mutate((userId) => deleteExpense(activeDelete, userId), "expensesPanel.deleted", "expensesPanel.deleteError");
@@ -164,7 +170,7 @@ export default function Expenses() {
             <Link key={name} to={`/${name}`} className={name === "expenses" ? "text-blue-600" : "text-gray-500 hover:text-gray-700"}>{t(name)}</Link>)}</nav>
         </div>
         <div className="flex items-center gap-3"><LanguageSwitcher /><span className="hidden sm:block text-sm text-gray-600">{user?.email}</span>
-          <button disabled={busy} onClick={() => request({ type: "signOut" })} className="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm disabled:opacity-50">{t("signOut")}</button>
+          <button disabled={busy || receiptBusy} onClick={() => request({ type: "signOut" })} className="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm disabled:opacity-50">{t("signOut")}</button>
         </div>
       </div>
     </header>
@@ -194,6 +200,7 @@ export default function Expenses() {
           </div>
           <strong className="text-gray-900">{formatExpenseRM(record.cents)}</strong>
           <div className="flex gap-3 text-sm">
+            <button disabled={busy} aria-label={t("expensesPanel.receipts.named",{name:record.description})} onClick={()=>request({type:"receipts",id:record.id})} className="text-blue-600">{t("expensesPanel.receipts.open")}</button>
             <button disabled={busy} aria-label={t("expensesPanel.editNamed", { name: record.description })} onClick={() => request({ type: "edit", id: record.id })} className="text-blue-600">{t("edit")}</button>
             <button disabled={busy} aria-label={t("expensesPanel.deleteNamed", { name: record.description })} onClick={() => request({ type: "delete", id: record.id })} className="text-red-600">{t("delete")}</button>
           </div>
@@ -204,6 +211,8 @@ export default function Expenses() {
         <button disabled={busy || !current.hasMore} onClick={() => request({ type: "page", page: page + 1 })} className="px-3 py-2 border rounded-lg disabled:opacity-40">{t("expensesPanel.next")}</button>
       </nav>}
     </main>
+    {receipts && receipts.userId===user?.id && <ExpenseReceipts key={user.id+":"+receipts.record.id} record={receipts.record} userId={user.id}
+      onClose={()=>{if(!receiptOperation.current)setReceipts(null);}} onBusyChange={value=>{if(currentUser.current===receipts.userId){receiptOperation.current=value;setReceiptBusy(value);}}} />}
     {activePending ? <ExpenseDialog role="alertdialog" title={t("expensesPanel.discardTitle")} onClose={() => setPending(null)}>
       <p className="text-sm text-gray-600">{t("expensesPanel.discardBody")}</p>
       <div className="mt-5 flex justify-end gap-3"><button onClick={() => setPending(null)} className="px-4 py-2 border rounded-lg">{t("expensesPanel.keepEditing")}</button>

@@ -12,6 +12,13 @@ const resources = {
         useCurrentTime: "Use current time", clearTime: "Clear time",
         timeInvalid: "Enter a valid time as HH:mm (00:00–23:59).", paymentMethodInvalid: "Choose one of the available payment methods.",
         paymentMethods: { cash: "Cash", debit_card: "Debit card", credit_card: "Credit card", bank_transfer: "Bank transfer", e_wallet: "E-wallet", other: "Other" },
+        receipts: {
+          title: "Expense receipts", files: "Receipt attachments", open: "Receipts", named: "Receipts for {{name}}", close: "Close",
+          optional: "Receipts are optional. Save normally, or save and add receipts afterwards.", saveAndAdd: "Save and add receipts",
+          hint: "Receipts are optional. Drag files into this window to upload, or choose files below.", saveFirst: "Save the expense before uploading receipts.",
+          setupRequired: "Receipt setup is required. Run 20261107_expense_receipts.sql in Supabase SQL Editor, then retry.",
+          cleanupError: "Could not finish deleting receipt files. The expense was kept. Some receipts may already be removed; retry to finish.",
+        },
         statistics: {
           title: "Expense overview", scope: "All expenses matching the filters above · MYR (RM)", total: "Total expenses", recordsLabel: "Expense count", average: "Average per expense",
           trend: "Spending over time", categories: "Spending by category", methods: "Payment methods", granularity: "Trend interval", units: {auto: "Automatic", day: "Daily", month: "Monthly"},
@@ -34,7 +41,7 @@ const resources = {
         },
         listOrder: "Most recently added first", loading: "Loading expenses...", empty: "No expenses yet. Add your first expense.",
         saving: "Saving...", saved: "Expense saved.", deleted: "Expense deleted.", deleting: "Deleting...",
-        deleteTitle: "Delete this expense?", deleteBody: "This permanently deletes the expense record.", confirmDelete: "Confirm delete",
+        deleteTitle: "Delete this expense?", deleteBody: "This permanently deletes the expense and its receipt files.", confirmDelete: "Confirm delete",
         editNamed: "Edit {{name}}", deleteNamed: "Delete {{name}}", retry: "Retry", reload: "Reload expenses",
         pagination: "Expense pages", previous: "Previous", next: "Next", page: "Page {{page}}",
         descriptionInvalid: "Enter a description between 1 and 1000 characters.",
@@ -63,6 +70,7 @@ const resources = {
         printTooLarge: "This document is too large to prepare for printing here. Download it and print it in a PDF reader.",
       },
       attachments: {
+        chooseFiles: "Choose files", receiptSetupRequired: "Receipt setup is required. Run 20261107_expense_receipts.sql in Supabase SQL Editor, then retry.",
         title: "Attachments", dropHere: "Drag and drop here",
         limits: "Up to 5 files per drop · 15MB maximum per file",
         saveFirst: "Select a saved note, or save this note before adding attachments.",
@@ -211,6 +219,13 @@ const resources = {
         useCurrentTime: "填入当前时间", clearTime: "清空时间",
         timeInvalid: "请输入 HH:mm 格式的有效时间（00:00–23:59）。", paymentMethodInvalid: "请选择现有支付方式。",
         paymentMethods: { cash: "现金", debit_card: "借记卡", credit_card: "信用卡", bank_transfer: "银行转账", e_wallet: "电子钱包", other: "其他" },
+        receipts: {
+          title: "支出收据", files: "收据附件", open: "收据", named: "{{name}} 的收据", close: "关闭",
+          optional: "收据选填。可直接保存，也可保存后添加收据。", saveAndAdd: "保存并添加收据",
+          hint: "收据非必填。将文件拖入此窗口上传，也可点击下方选择文件。", saveFirst: "请先保存支出，再上传收据。",
+          setupRequired: "请先在 Supabase SQL Editor 执行 20261107_expense_receipts.sql，再重试。",
+          cleanupError: "收据文件未能全部清理，支出记录已保留。部分收据可能已移除，请重试完成删除。",
+        },
         statistics: {
           title: "支出概览", scope: "上方筛选条件下的全部支出 · MYR（RM）", total: "支出总额", recordsLabel: "支出笔数", average: "平均每笔金额",
           trend: "支出趋势", categories: "分类金额与占比", methods: "支付方式汇总", granularity: "趋势粒度", units: {auto: "自动", day: "按日", month: "按月"},
@@ -233,7 +248,7 @@ const resources = {
         },
         listOrder: "按新增时间从新到旧排列", loading: "正在加载支出…", empty: "暂无支出，添加第一笔记录吧。",
         saving: "正在保存…", saved: "支出已保存。", deleted: "支出已删除。", deleting: "正在删除…",
-        deleteTitle: "删除这笔支出？", deleteBody: "此操作会永久删除这笔支出记录。", confirmDelete: "确认删除",
+        deleteTitle: "删除这笔支出？", deleteBody: "此操作会永久删除这笔支出及其收据文件。", confirmDelete: "确认删除",
         editNamed: "编辑{{name}}", deleteNamed: "删除{{name}}", retry: "重试", reload: "重新读取支出",
         pagination: "支出分页", previous: "上一页", next: "下一页", page: "第 {{page}} 页",
         descriptionInvalid: "请输入 1 至 1000 个字符的描述。",
@@ -260,6 +275,7 @@ const resources = {
         printTooLarge: "此文档的打印内容过大，请下载后使用 PDF 阅读器打印。",
       },
       attachments: {
+        chooseFiles: "选择文件", receiptSetupRequired: "请先在 Supabase SQL Editor 执行 20261107_expense_receipts.sql，再重试。",
         title: "附件", dropHere: "拖拽文件到此处上传",
         limits: "每次最多 5 个文件 · 单个文件最大 15MB",
         saveFirst: "请先选择已保存的笔记，或保存当前笔记后再添加附件。",

@@ -11,6 +11,7 @@ function load(file, imports = {}, globals = {}) {
       if (["../lib/expenseModel", "./expenseModel"].includes(name)) return load("src/lib/expenseModel.jsx");
       if (name === "../lib/expenseQuery") return load("src/lib/expenseQuery.jsx");
       if (name === "../lib/expenseStatistics") return load("src/lib/expenseStatistics.jsx");
+      if (name === "./expenseReceiptService") return imports[name] || {deleteExpenseReceipts:async()=>{}};
       if (!(name in imports)) throw Error("Unexpected import " + name);
       return imports[name];
     } });
@@ -89,6 +90,7 @@ function page(back, overrides = {}, clock = {}) {
     "./ExpenseDialog": {__esModule:true,default:"dialog"}, "../services/expenseService": {...back.service,getExpenseStatistics:async()=>({count:"0",totalCents:"0",averageCents:"0",granularity:"day",categories:[],methods:[],trend:[]}),...overrides},
     "./ExpenseFilters": {__esModule:true,default:"filters"},
     "./ExpenseStatistics": {__esModule:true,default:"statistics"},
+    "./ExpenseReceipts": {__esModule:true,default:"receipts"},
   }, {setTimeout, clearTimeout, ...clock}).default;
   const nodes = (value) => Array.isArray(value) ? value.flatMap(nodes) : value && typeof value==="object" ? [value,...nodes(value.props?.children)] : [];
   const render = () => { let count=0;do {dirty=false;cursor=0;tree=component();const list=effects;effects=[];list.forEach(fn=>fn());if(++count>30)throw Error("render loop");}while(dirty); };
@@ -98,6 +100,7 @@ function page(back, overrides = {}, clock = {}) {
     dialog:()=>nodes(tree).find(node=>node.type==="dialog")?.props,
     filters:()=>nodes(tree).find(node=>node.type==="filters")?.props,
     statistics:()=>nodes(tree).find(node=>node.type==="statistics")?.props,
+    receipts:()=>nodes(tree).find(node=>node.type==="receipts")?.props,
     button:(text)=>nodes(tree).find(node=>node.type==="button"&&node.props.children.includes(text)),
     text:()=>nodes(tree).flatMap(node=>node.props.children??[]).filter(value=>typeof value==="string").join(" "),
     setUser(value) {user=value;back.setUser(value?.id);render();},
@@ -328,4 +331,12 @@ test("late statistics responses cannot replace a new scope or leak across accoun
   old.resolve({count:"999"});await app.flush();assert.equal(app.statistics().data.count,"2");
   app.statistics().onGranularityChange("month");app.render();assert.equal(app.statistics().loading,true);
   app.setUser({id:"u2"});await app.flush();other.resolve({count:"999"});await app.flush();assert.equal(app.statistics().data.count,"2");assert.equal(app.statistics().granularity,"auto");app.unmount();
+});
+
+test("expenses can save without receipts or open the optional receipt window after a successful save",async()=>{
+  const back=backend(),app=page(back);app.render();await app.flush();app.button("expensesPanel.add").props.onClick();app.render();app.editor().onChange({description:"No receipt",amount:"5"});app.render();app.editor().onSave(submit);await app.flush();await app.flush();assert.equal(app.receipts(),undefined);
+  app.button("expensesPanel.receipts.open").props.onClick();app.render();assert.equal(app.receipts().record.description,"No receipt");app.receipts().onClose();app.render();
+  app.button("expensesPanel.add").props.onClick();app.render();app.editor().onChange({description:"With receipt",amount:"8"});app.render();
+  app.editor().onSave({...submit,nativeEvent:{submitter:{value:"receipts"}}});await app.flush();await app.flush();assert.equal(app.receipts().record.description,"With receipt");assert.equal(back.rows.size,2);
+  app.receipts().onBusyChange(true);app.render();app.receipts().onClose();app.render();assert.ok(app.receipts());app.setUser({id:"u2"});await app.flush();assert.equal(app.receipts(),undefined);app.setUser(null);await app.flush();assert.equal(app.receipts(),undefined);app.unmount();
 });

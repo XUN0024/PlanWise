@@ -2,6 +2,7 @@ import { supabase } from "../lib/supabase";
 import { EXPENSE_PAGE_SIZE, expenseError, expenseFromRow, expensePayload } from "../lib/expenseModel";
 import { expenseSearchPattern, normalizeExpenseFilters } from "../lib/expenseQuery";
 import { EXPENSE_TREND_MODES, expenseStatisticsFromRow } from "../lib/expenseStatistics";
+import { deleteExpenseReceipts } from "./expenseReceiptService";
 const FIELDS = "id,note,amount,currency,category,expense_date,expense_time,payment_method,created_at,updated_at";
 async function requireUser(userId) {
   if (!userId) throw expenseError("EXPENSE_AUTH_REQUIRED");
@@ -78,6 +79,7 @@ export async function updateExpense(draft, userId, version) {
 export async function deleteExpense(record, userId) {
   await requireUser(userId);
   if (!record.updatedAt) throw expenseError("EXPENSE_CONFLICT");
+  await deleteExpenseReceipts(record,userId);
   const { data, error } = await supabase.from("expenses").delete().eq("id", record.id)
     .eq("user_id", userId).eq("updated_at", record.updatedAt).select("id").maybeSingle();
   if (error) throw error;

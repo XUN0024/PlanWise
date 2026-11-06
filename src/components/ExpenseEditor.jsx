@@ -45,8 +45,10 @@ export default function ExpenseEditor({ draft, isNew, busy, error, onChange, onS
             {EXPENSE_PAYMENT_METHODS.map((method) => <option key={method} value={method}>{t(`expensesPanel.paymentMethods.${method}`)}</option>)}
           </select>
         </label>
-        <div className="flex justify-end gap-3 pt-2">
+        <p className="text-xs text-gray-500">{t("expensesPanel.receipts.optional")}</p>
+        <div className="flex flex-wrap justify-end gap-3 pt-2">
           <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">{t("cancel")}</button>
+          <button type="submit" name="afterSave" value="receipts" className="px-4 py-2 border border-blue-300 text-blue-700 rounded-lg">{t("expensesPanel.receipts.saveAndAdd")}</button>
           <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg">{t(busy ? "expensesPanel.saving" : "save")}</button>
         </div>
       </fieldset>

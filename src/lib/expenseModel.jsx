@@ -65,6 +65,7 @@ export const expenseErrorKey = (error, fallback = "expensesPanel.saveError") => 
     EXPENSE_FILTER_DATE_RANGE: "expensesPanel.filters.dateRangeInvalid", EXPENSE_FILTER_AMOUNT_INVALID: "expensesPanel.filters.amountInvalid",
     EXPENSE_FILTER_AMOUNT_RANGE: "expensesPanel.filters.amountRangeInvalid", EXPENSE_FILTER_SEARCH_INVALID: "expensesPanel.filters.searchInvalid",
     EXPENSE_STATS_SETUP_REQUIRED: "expensesPanel.statistics.setupRequired", EXPENSE_STATS_INVALID: "expensesPanel.statistics.dataInvalid",
+    EXPENSE_RECEIPTS_SETUP_REQUIRED: "expensesPanel.receipts.setupRequired", EXPENSE_RECEIPT_CLEANUP_FAILED: "expensesPanel.receipts.cleanupError",
     EXPENSE_CURRENCY_INVALID: "expensesPanel.currencyInvalid", EXPENSE_CONFLICT: "expensesPanel.conflict",
     EXPENSE_AUTH_REQUIRED: "expensesPanel.authError", EXPENSE_DATA_INVALID: "expensesPanel.dataInvalid" })[error?.code] || fallback;
 };

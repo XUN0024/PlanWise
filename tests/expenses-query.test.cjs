@@ -36,7 +36,7 @@ client.auth.getSession = async () => ({data:{session:{user:{id:owner}}}});
 function load(file) {
   const filename=path.resolve(__dirname,"..",file);if(cache.has(filename))return cache.get(filename);
   const {code}=babel.transformSync(fs.readFileSync(filename,"utf8"),{filename,babelrc:false,configFile:false,presets:[["@babel/preset-env",{targets:{node:"current"}}]]});
-  const mod=new Module(filename);mod.require=name=>name==="../lib/supabase"?{supabase:client}:load(path.relative(path.resolve(__dirname,".."),path.resolve(path.dirname(filename),name+".jsx")));
+  const mod=new Module(filename);mod.require=name=>name==="./expenseReceiptService"?{deleteExpenseReceipts:async()=>{}}:name==="../lib/supabase"?{supabase:client}:load(path.relative(path.resolve(__dirname,".."),path.resolve(path.dirname(filename),name+".jsx")));
   mod._compile(code,filename);cache.set(filename,mod.exports);return mod.exports;
 }
 const query = load("src/lib/expenseQuery.jsx"), model = load("src/lib/expenseModel.jsx"), service = load("src/services/expenseService.jsx");

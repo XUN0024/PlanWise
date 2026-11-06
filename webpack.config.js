@@ -2,6 +2,7 @@ const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const webpack = require("webpack");
 const dotenv = require("dotenv");
+const fs = require("fs");
 
 // Load environment variables from .env file
 const envResult = dotenv.config({ path: path.resolve(__dirname, ".env") });
@@ -19,6 +20,9 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, "dist"),
     filename: "bundle.js",
+    globalObject: "globalThis",
+    chunkLoading: "jsonp",
+    chunkFormat: "array-push",
     clean: true,
   },
   module: {
@@ -55,6 +59,7 @@ module.exports = {
     extensions: [".js", ".jsx"],
     fallback: {
       crypto: require.resolve("crypto-browserify"),
+      buffer: require.resolve("buffer/"),
       stream: require.resolve("stream-browserify"),
       assert: require.resolve("assert"),
       http: require.resolve("stream-http"),
@@ -70,6 +75,21 @@ module.exports = {
     },
   },
   plugins: [
+    { apply(compiler) {
+      compiler.hooks.thisCompilation.tap("PdfPreviewAssets", (compilation) => {
+        compilation.hooks.processAssets.tap({ name: "PdfPreviewAssets", stage: webpack.Compilation.PROCESS_ASSETS_STAGE_ADDITIONAL }, () => {
+          const base = path.dirname(require.resolve("pdfjs-dist/package.json"));
+          const copy = (folder, output) => {
+            for (const entry of fs.readdirSync(folder, { withFileTypes: true })) {
+              const source = path.join(folder, entry.name), target = output + "/" + entry.name;
+              if (entry.isDirectory()) copy(source, target);
+              else compilation.emitAsset(target, new webpack.sources.RawSource(fs.readFileSync(source)));
+            }
+          };
+          for (const folder of ["cmaps", "standard_fonts", "wasm"]) copy(path.join(base, folder), "pdf-assets/" + folder);
+        });
+      });
+    } },
     new HtmlWebpackPlugin({
       template: "./public/index.html",
     }),
@@ -94,5 +114,6 @@ module.exports = {
     port: 3000,
     hot: true,
   },
-  target: "electron-renderer",
+  // Renderer UI runs both in Chrome and in Electron; native actions use preload.
+  target: "web",
 };

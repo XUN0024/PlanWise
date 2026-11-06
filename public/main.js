@@ -1,4 +1,5 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { registerAttachmentPreview } = require('./attachment-preview.cjs');
 const path = require('path');
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -8,6 +9,7 @@ function createWindow() {
     width: 1200,
     height: 800,
     webPreferences: {
+      preload: path.join(__dirname, 'attachment-preload.js'),
       nodeIntegration: true,
       contextIsolation: false,
       enableRemoteModule: true,
@@ -16,6 +18,7 @@ function createWindow() {
     icon: path.join(__dirname, 'icon.png'), // Optional: add an icon
     show: false // Don't show until ready
   });
+  registerAttachmentPreview({ ipcMain, BrowserWindow, dialog }, mainWindow);
 
   // Load the app
   if (isDev) {

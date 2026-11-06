@@ -190,12 +190,18 @@ export const discardAttachment = async (id, noteId, userId) => {
   if (data) await removeAttachment(data, userId);
 };
 
-export const downloadAttachment = async (record, userId) => {
-  await authenticatedSession(userId);
+export const downloadAttachment = async (record, userId, { signal } = {}) => {
+  const session = await authenticatedSession(userId);
+  assertActive(signal);
   assertRecord(record, userId, record.note_id);
-  const { data, error } = await supabase.storage.from(ATTACHMENT_BUCKET)
+  const client = signal ? createClient(process.env.REACT_APP_SUPABASE_URL, process.env.REACT_APP_SUPABASE_ANON_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    global: { headers: { Authorization: "Bearer " + session.access_token }, fetch: (input, init) => fetch(input, { ...init, signal }) },
+  }) : supabase;
+  const { data, error } = await client.storage.from(ATTACHMENT_BUCKET)
     .download(record.storage_path);
   if (error) throw error;
+  assertActive(signal);
   return data;
 };
 

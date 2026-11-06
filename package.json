@@ -10,7 +10,8 @@
     "dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && npm run electron-dev\"",
     "dev-desktop": "concurrently \"npm start\" \"wait-on http://localhost:3000 && npm run electron-dev\" --kill-others-on-fail",
     "desktop-only": "concurrently \"npm run start -- --open=false\" \"wait-on http://localhost:3000 && npm run electron-dev\"",
-    "test": "node --test"
+    "test": "node --test",
+    "test:preview": "node scripts/build-preview-smoke.cjs"
   },
   "repository": {
     "type": "git",
@@ -72,6 +73,7 @@
     "i18next": "^25.3.2",
     "i18next-browser-languagedetector": "^8.2.0",
     "i18next-http-backend": "^3.0.2",
+    "pdfjs-dist": "^5.7.284",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-i18next": "^15.6.1",

@@ -7,6 +7,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { attachmentDiagnostic, attachmentKind, formatAttachmentSize, isFileDrag, validateAttachmentBatch } from "../lib/attachmentModel";
 import { getAttachments, uploadAttachment, removeAttachment, discardAttachment, downloadAttachment } from "../services/attachmentService";
+import AttachmentPreview from "./AttachmentPreview";
 
 const icons = {
   image: faFileImage, pdf: faFilePdf, spreadsheet: faFileExcel, presentation: faFilePowerpoint,
@@ -28,6 +29,7 @@ export default function NoteAttachments({ noteId, userId, saved, disabled = fals
   const [dragging, setDragging] = useState(false);
   const [working, setWorking] = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const [preview, setPreview] = useState(null);
   const [reload, setReload] = useState(0);
   const depth = useRef(0);
   const zone = useRef(null);
@@ -81,7 +83,7 @@ export default function NoteAttachments({ noteId, userId, saved, disabled = fals
     if (alive.current) setJobs((list) => list.map((job) => job.id === id ? { ...job, ...updates } : job));
   };
   const runJobs = async (batch) => {
-    if (locked.current || disabled || deleting || !saved || loading || loadError) return;
+    if (locked.current || disabled || deleting || preview || !saved || loading || loadError) return;
     setError(null);
     const abort = new AbortController();
     controller.current = abort;
@@ -126,7 +128,7 @@ export default function NoteAttachments({ noteId, userId, saved, disabled = fals
     event.preventDefault(); event.stopPropagation();
     depth.current = 0; setDragging(false);
     if (!saved || !noteId) { setError("saveFirst"); return; }
-    if (locked.current || disabled || deleting || loading) { setError("wait"); return; }
+    if (locked.current || disabled || deleting || preview || loading) { setError("wait"); return; }
     if (loadError) { setError("loadError"); return; }
     try {
       if (Array.from(event.dataTransfer.items || []).some((item) => item.webkitGetAsEntry?.()?.isDirectory)) {
@@ -169,7 +171,7 @@ export default function NoteAttachments({ noteId, userId, saved, disabled = fals
   };
   const fileIcon = (name, mime) => <FontAwesomeIcon icon={icons[attachmentKind(name, mime)]} className="w-6 h-6 text-blue-600 shrink-0" />;
   const jobIds = new Set(jobs.map((job) => job.id));
-  const canDrop = saved && !working && !disabled && !deleting && !loading && !loadError;
+  const canDrop = saved && !working && !disabled && !deleting && !preview && !loading && !loadError;
   return (
     <div ref={zone} className="relative" onDrop={onDrop}
       onDragEnter={(event) => { if (isFileDrag(event.dataTransfer)) { event.preventDefault(); depth.current++; setDragging(true); } }}
@@ -201,6 +203,9 @@ export default function NoteAttachments({ noteId, userId, saved, disabled = fals
                 <button disabled={working || record.status !== "ready"} onClick={() => download(record)} className="block text-left text-sm text-blue-700 truncate max-w-full" title={record.original_name}>{record.original_name}</button>
                 <p className="text-xs text-gray-500">{formatAttachmentSize(Number(record.size_bytes))}{record.status !== "ready" && " · " + t("attachments.incomplete")}</p>
               </div>
+              <button disabled={working || disabled || record.status !== "ready"} onClick={() => {
+                setPreview(record); reportBusy.current?.(true);
+              }} className="text-xs text-blue-600 disabled:opacity-40">{t("preview.open")}</button>
               <button disabled={working} onClick={() => setDeleting(record)} className="text-xs text-red-600">{t("notesPanel.delete")}</button>
             </div>
           )}
@@ -227,6 +232,9 @@ export default function NoteAttachments({ noteId, userId, saved, disabled = fals
           </div>)}
         </div>
       </section>}
+      {preview && <AttachmentPreview key={userId + ":" + preview.id} record={preview} userId={userId} onClose={() => {
+        setPreview(null); reportBusy.current?.(false);
+      }} />}
       {deleting && <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onContextMenu={(event) => event.preventDefault()}>
         <section role="alertdialog" aria-modal="true" aria-labelledby="delete-attachment-title" className="bg-white rounded-xl p-6 max-w-md w-full">
           <h2 id="delete-attachment-title" className="font-semibold">{t("attachments.deleteTitle")}</h2>

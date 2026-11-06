@@ -5,42 +5,81 @@ import { useAuth } from "../contexts/AuthContext";
 import LanguageSwitcher from "./LanguageSwitcher";
 import ExpenseEditor from "./ExpenseEditor";
 import ExpenseDialog from "./ExpenseDialog";
-import { getExpenses, createExpense, updateExpense, deleteExpense } from "../services/expenseService";
+import ExpenseFilters from "./ExpenseFilters";
+import ExpenseStatistics from "./ExpenseStatistics";
+import { getExpenses, getExpenseStatistics, createExpense, updateExpense, deleteExpense } from "../services/expenseService";
 import { expenseToday, expenseIsDirty, expenseErrorKey, formatExpenseRM, expensePayload } from "../lib/expenseModel";
+import { DEFAULT_EXPENSE_FILTERS, hasExpenseFilters, normalizeExpenseFilters } from "../lib/expenseQuery";
 
 export default function Expenses() {
   const { user, signOut } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [snapshot, setSnapshot] = useState({ userId: null, page: 0, items: [], hasMore: false, loading: true, error: null });
-  const [page, setPage] = useState(0), [reload, setReload] = useState(0);
+  const [view, setView] = useState({ userId: user?.id, page: 0, filters: { ...DEFAULT_EXPENSE_FILTERS } });
+  const [debouncedSearch, setDebouncedSearch] = useState({ userId: user?.id, value: "" });
+  const [reload, setReload] = useState(0);
+  const [statistics, setStatistics] = useState(null), [granularity, setGranularity] = useState("auto"), [statsRetry, setStatsRetry] = useState(0);
   const [editor, setEditor] = useState(null), [deleting, setDeleting] = useState(null);
   const [pending, setPending] = useState(null), [busy, setBusy] = useState(false);
   const [writeError, setWriteError] = useState(null), [notice, setNotice] = useState(null);
   const operation = useRef(null), currentUser = useRef(user?.id);
   currentUser.current = user?.id;
+  const page = view.userId === user?.id ? view.page : 0;
+  const filters = view.userId === user?.id ? view.filters : DEFAULT_EXPENSE_FILTERS;
+  const setPage = (next) => setView((value) => value.userId !== currentUser.current ? value
+    : { ...value, page: typeof next === "function" ? next(value.page) : next });
+  let queryKey = "", statsKey = "", filterError = null, filtered = false;
+  try {
+    const normalized = normalizeExpenseFilters(filters);
+    queryKey = JSON.stringify(normalized); filtered = hasExpenseFilters(normalized);
+    const { sort, ...scope } = normalized; statsKey = JSON.stringify(scope);
+  } catch (error) { filterError = expenseErrorKey(error); }
+  const searchReady = debouncedSearch.userId === user?.id && debouncedSearch.value === filters.search;
   useEffect(() => {
-    setPage(0); setEditor(null); setDeleting(null); setPending(null); setBusy(false);
+    setView({ userId: user?.id, page: 0, filters: { ...DEFAULT_EXPENSE_FILTERS } });
+    setDebouncedSearch({ userId: user?.id, value: "" });
+    setGranularity("auto"); setStatsRetry(0); setStatistics(null);
+    setEditor(null); setDeleting(null); setPending(null); setBusy(false);
     setWriteError(null); setNotice(null); operation.current = null;
     return () => { operation.current = null; };
   }, [user?.id]);
   useEffect(() => {
+    if (searchReady) return;
+    const timer = setTimeout(() => setDebouncedSearch({ userId: user?.id, value: filters.search }), 300);
+    return () => clearTimeout(timer);
+  }, [user?.id, filters.search, searchReady]);
+  useEffect(() => {
     let cancelled = false;
     const userId = user?.id;
-    setSnapshot({ userId, page, items: [], hasMore: false, loading: !!userId, error: null });
-    if (userId) getExpenses(userId, page).then((result) => {
+    setSnapshot({ userId, page, queryKey, items: [], hasMore: false, loading: !!userId && !filterError, error: null });
+    const normalized = queryKey ? JSON.parse(queryKey) : null;
+    if (userId && normalized && searchReady) getExpenses(userId, page, { ...normalized, datePreset: "custom" }).then((result) => {
       if (cancelled || currentUser.current !== userId) return;
       if (!result.items.length && page > 0) { setPage((value) => value - 1); return; }
-      setSnapshot({ ...result, userId, page, loading: false, error: null });
+      setSnapshot({ ...result, userId, page, queryKey, loading: false, error: null });
     }).catch((error) => {
-      if (!cancelled && currentUser.current === userId) setSnapshot({ userId, page, items: [], hasMore: false, loading: false,
+      if (!cancelled && currentUser.current === userId) setSnapshot({ userId, page, queryKey, items: [], hasMore: false, loading: false,
         error: expenseErrorKey(error, "expensesPanel.loadError") });
     });
     return () => { cancelled = true; };
-  }, [user?.id, page, reload]);
+  }, [user?.id, page, reload, queryKey, searchReady, filterError]);
+  useEffect(() => {
+    let cancelled = false;
+    const userId = user?.id, identity = { userId, statsKey, granularity, revision: reload, retry: statsRetry };
+    setStatistics({ ...identity, data: null, loading: !!userId && !filterError, error: null });
+    if (userId && statsKey && searchReady) getExpenseStatistics(userId, { ...JSON.parse(statsKey), datePreset: "custom" }, granularity).then(data => {
+      if (!cancelled && currentUser.current === userId) setStatistics({ ...identity, data, loading: false, error: null });
+    }).catch(error => {
+      if (!cancelled && currentUser.current === userId) setStatistics({ ...identity, data: null, loading: false, error: expenseErrorKey(error,"expensesPanel.statistics.loadError") });
+    });
+    return () => { cancelled = true; };
+  }, [user?.id, statsKey, granularity, reload, statsRetry, searchReady, filterError]);
 
-  const current = snapshot.userId === user?.id && snapshot.page === page ? snapshot
-    : { items: [], hasMore: false, loading: true, error: null };
+  const current = snapshot.userId === user?.id && snapshot.page === page && snapshot.queryKey === queryKey && searchReady ? snapshot
+    : { items: [], hasMore: false, loading: !filterError, error: null };
+  const currentStatistics = statistics?.userId === user?.id && statistics.statsKey === statsKey && statistics.granularity === granularity
+    && statistics.revision === reload && statistics.retry === statsRetry && searchReady ? statistics : { data: null, loading: true, error: null };
   const activeEditor = editor?.userId === user?.id ? editor : null;
   const activeDelete = deleting?.userId === user?.id ? deleting.record : null;
   const activePending = pending?.userId === user?.id ? pending : null;
@@ -55,7 +94,7 @@ export default function Expenses() {
   const perform = (action) => {
     setEditor(null); setDeleting(null); setPending(null); setWriteError(null); setNotice(null);
     if (action.type === "new") {
-      const draft = { id: crypto.randomUUID(), description: "", amount: "", date: expenseToday(), category: "Food", currency: "MYR" };
+      const draft = { id: crypto.randomUUID(), description: "", amount: "", date: expenseToday(), category: "Food", currency: "MYR", time: "", paymentMethod: "" };
       setEditor({ userId: user.id, isNew: true, draft, base: { ...draft } });
     } else if (action.type === "edit" || action.type === "delete") {
       const record = current.items.find((item) => item.id === action.id);
@@ -63,7 +102,14 @@ export default function Expenses() {
       if (action.type === "edit") setEditor({ userId: user.id, isNew: false, draft: { ...record }, base: { ...record } });
       else setDeleting({ userId: user.id, record });
     } else if (action.type === "reload") setReload((value) => value + 1);
+    else if (action.type === "filters" || action.type === "resetFilters") {
+      const nextFilters = action.type === "resetFilters" ? { ...DEFAULT_EXPENSE_FILTERS } : { ...filters, ...action.updates };
+      setView({ userId: user.id, page: 0, filters: nextFilters });
+      if (action.type === "resetFilters") setDebouncedSearch({ userId: user.id, value: "" });
+    }
     else if (action.type === "page") setPage(action.page);
+    else if (action.type === "statsRetry") setStatsRetry(value=>value+1);
+    else if (action.type === "granularity") setGranularity(action.value);
     else if (action.type === "navigate") navigate(action.to);
     else if (action.type === "signOut") {
       Promise.resolve(signOut()).catch(() => { if (currentUser.current === user.id) setWriteError("expensesPanel.signOutError"); });
@@ -71,7 +117,7 @@ export default function Expenses() {
   };
   const request = (action) => {
     if (operation.current || !user?.id) return;
-    if (current.loading && !["close", "navigate", "signOut"].includes(action.type)) return;
+    if (current.loading && !["close", "navigate", "signOut", "filters", "resetFilters", "statsRetry", "granularity"].includes(action.type)) return;
     if (dirty) setPending({ ...action, userId: user.id }); else perform(action);
   };
   const navigateHeader = (event) => {
@@ -122,22 +168,29 @@ export default function Expenses() {
         </div>
       </div>
     </header>
-    <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
       <div className="flex items-center justify-between gap-3 mb-6">
-        <div><h1 className="text-2xl font-semibold text-gray-900">{t("expenses")}</h1><p className="text-sm text-gray-500 mt-1">{t("expensesPanel.listOrder")} · MYR (RM)</p></div>
-        <button disabled={busy || current.loading || !!current.error || !user?.id} onClick={() => request({ type: "new" })}
+        <div><h1 className="text-2xl font-semibold text-gray-900">{t("expenses")}</h1><p className="text-sm text-gray-500 mt-1">{t(`expensesPanel.filters.sorts.${filters.sort}`)} · MYR (RM)</p></div>
+        <button disabled={busy || current.loading || !!current.error || !!filterError || !user?.id} onClick={() => request({ type: "new" })}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm disabled:opacity-50">+ {t("expensesPanel.add")}</button>
       </div>
+      <ExpenseFilters filters={filters} disabled={busy || !user?.id} error={filterError}
+        onChange={(updates) => request({ type: "filters", updates })} onReset={() => request({ type: "resetFilters" })} />
       {notice && <p role="status" className="text-sm text-green-700 mb-4">{t(notice)}</p>}
       {writeError && !activeEditor && !activeDelete && <p role="alert" className="text-red-700 mb-4">{t(writeError)}</p>}
-      {current.loading ? <p role="status" className="p-6 text-gray-500">{t("expensesPanel.loading")}</p>
+      {!filterError && <ExpenseStatistics {...currentStatistics} granularity={granularity} disabled={busy || !user?.id}
+        onGranularityChange={value=>request({ type: "granularity", value })} onRetry={()=>request({ type: "statsRetry" })} />}
+      <div className="mb-4"><h2 className="text-lg font-semibold text-gray-900">{t("expensesPanel.statistics.bills")}</h2><p className="mt-1 text-xs text-gray-500">{t("expensesPanel.statistics.billsHint")}</p></div>
+      {filterError ? null : current.loading ? <p role="status" className="p-6 text-gray-500">{t("expensesPanel.loading")}</p>
         : current.error ? <div role="alert" className="bg-red-50 rounded-lg p-5 text-red-700"><p>{t(current.error)}</p>
           <button disabled={busy} onClick={() => request({ type: "reload" })} className="underline mt-3">{t("expensesPanel.retry")}</button></div>
-        : !current.items.length ? <div role="status" className="bg-white border rounded-xl p-10 text-center text-gray-500">{t("expensesPanel.empty")}</div>
+        : !current.items.length ? <div role="status" className="bg-white border rounded-xl p-10 text-center text-gray-500">{t(filtered ? "expensesPanel.filters.noResults" : "expensesPanel.empty")}</div>
         : <div className="space-y-3">{current.items.map((record) => <article key={record.id} className="bg-white border rounded-xl p-4 flex flex-wrap items-center gap-4">
           <div className="flex-1 min-w-0"><h2 className="font-medium text-gray-900 break-words">{record.description}</h2>
-            <p className="mt-2 text-xs text-gray-500 flex flex-wrap gap-3"><time dateTime={record.date}>{record.date}</time>
+            <p className="mt-2 text-xs text-gray-500 flex flex-wrap gap-3"><time dateTime={record.time ? `${record.date}T${record.time}` : record.date}>{record.date}</time>
+              <span>{t("expensesPanel.time")}: {record.time || t("expensesPanel.notRecorded")}</span>
               <span className="bg-gray-100 rounded-full px-2 py-0.5">{t(`expensesPanel.categories.${record.category}`)}</span></p>
+            <p className="mt-2 text-xs text-gray-500">{t("expensesPanel.paymentMethod")}: {record.paymentMethod ? t(`expensesPanel.paymentMethods.${record.paymentMethod}`) : t("expensesPanel.notRecorded")}</p>
           </div>
           <strong className="text-gray-900">{formatExpenseRM(record.cents)}</strong>
           <div className="flex gap-3 text-sm">
@@ -145,7 +198,7 @@ export default function Expenses() {
             <button disabled={busy} aria-label={t("expensesPanel.deleteNamed", { name: record.description })} onClick={() => request({ type: "delete", id: record.id })} className="text-red-600">{t("delete")}</button>
           </div>
         </article>)}</div>}
-      {!current.error && !current.loading && (page > 0 || current.hasMore) && <nav aria-label={t("expensesPanel.pagination")} className="mt-6 flex items-center justify-center gap-4 text-sm">
+      {!filterError && !current.error && !current.loading && (page > 0 || current.hasMore) && <nav aria-label={t("expensesPanel.pagination")} className="mt-6 flex items-center justify-center gap-4 text-sm">
         <button disabled={busy || page === 0} onClick={() => request({ type: "page", page: page - 1 })} className="px-3 py-2 border rounded-lg disabled:opacity-40">{t("expensesPanel.previous")}</button>
         <span>{t("expensesPanel.page", { page: page + 1 })}</span>
         <button disabled={busy || !current.hasMore} onClick={() => request({ type: "page", page: page + 1 })} className="px-3 py-2 border rounded-lg disabled:opacity-40">{t("expensesPanel.next")}</button>

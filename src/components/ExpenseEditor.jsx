@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import ExpenseDialog from "./ExpenseDialog";
-import { EXPENSE_CATEGORIES } from "../lib/expenseModel";
+import { EXPENSE_CATEGORIES, EXPENSE_PAYMENT_METHODS, expenseCurrentTime } from "../lib/expenseModel";
 const control = "mt-2 w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500";
 
 export default function ExpenseEditor({ draft, isNew, busy, error, onChange, onSave, onClose, onReload }) {
@@ -21,12 +21,28 @@ export default function ExpenseEditor({ draft, isNew, busy, error, onChange, onS
           <input required inputMode="decimal" type="text" autoComplete="off" placeholder="12.50" value={draft.amount}
             onChange={(event) => onChange({ amount: event.target.value })} className={control} />
         </label>
-        <label className="block text-sm font-medium text-gray-700">{t("expensesPanel.date")}
-          <input required type="date" min="0001-01-01" max="9999-12-31" value={draft.date} onChange={(event) => onChange({ date: event.target.value })} className={control} />
-        </label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <label className="block text-sm font-medium text-gray-700">{t("expensesPanel.date")}
+            <input required type="date" min="0001-01-01" max="9999-12-31" value={draft.date} onChange={(event) => onChange({ date: event.target.value })} className={control} />
+          </label>
+          <div>
+            <label htmlFor="expense-time" className="block text-sm font-medium text-gray-700">{t("expensesPanel.time")} <span className="font-normal text-gray-500">({t("expensesPanel.optional")})</span></label>
+            <input id="expense-time" type="time" step="60" value={draft.time || ""} onChange={(event) => onChange({ time: event.target.value })} className={control} />
+            <div className="flex flex-wrap gap-3 mt-2 text-xs">
+              <button type="button" onClick={() => onChange({ time: expenseCurrentTime() })} className="text-blue-600">{t("expensesPanel.useCurrentTime")}</button>
+              <button type="button" disabled={!draft.time} onClick={() => onChange({ time: "" })} className="text-gray-500 disabled:opacity-40">{t("expensesPanel.clearTime")}</button>
+            </div>
+          </div>
+        </div>
         <label className="block text-sm font-medium text-gray-700">{t("expensesPanel.category")}
           <select value={draft.category} onChange={(event) => onChange({ category: event.target.value })} className={control}>
             {EXPENSE_CATEGORIES.map((category) => <option key={category} value={category}>{t(`expensesPanel.categories.${category}`)}</option>)}
+          </select>
+        </label>
+        <label className="block text-sm font-medium text-gray-700">{t("expensesPanel.paymentMethod")} <span className="font-normal text-gray-500">({t("expensesPanel.optional")})</span>
+          <select value={draft.paymentMethod || ""} onChange={(event) => onChange({ paymentMethod: event.target.value })} className={control}>
+            <option value="">{t("expensesPanel.notRecorded")}</option>
+            {EXPENSE_PAYMENT_METHODS.map((method) => <option key={method} value={method}>{t(`expensesPanel.paymentMethods.${method}`)}</option>)}
           </select>
         </label>
         <div className="flex justify-end gap-3 pt-2">

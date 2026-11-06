@@ -16,7 +16,7 @@ function load(file){
 }
 const Editor=load("src/components/ExpenseEditor.jsx").default;
 const Dialog=load("src/components/ExpenseDialog.jsx").default;
-const initial={id:"e1",description:"Lunch",amount:"12.50",date:"2026-11-06",category:"Food",currency:"MYR"};
+const initial={id:"e1",description:"Lunch",amount:"12.50",date:"2026-11-06",category:"Food",currency:"MYR",time:"",paymentMethod:""};
 async function type(input,value){await act(async()=>{Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,"value").set.call(input,value);input.dispatchEvent(new window.Event("input",{bubbles:true}));});}
 async function mountEditor(extra={}){
   const host=document.getElementById("root"),opener=host.appendChild(document.createElement("button"));opener.focus();
@@ -30,7 +30,7 @@ async function mountEditor(extra={}){
 test("real editor sends entered fields, shows fixed MYR/RM and retains values after a failed save",async()=>{
   const ui=await mountEditor();
   assert.match(document.querySelector('[role="dialog"]').textContent,/MYR \(RM\)/);
-  const inputs=document.querySelectorAll("input");assert.equal(inputs.length,3);assert.ok(document.activeElement===inputs[0],"description receives focus");
+  const inputs=document.querySelectorAll("input");assert.equal(inputs.length,4);assert.ok(document.activeElement===inputs[0],"description receives focus");
   await type(inputs[0],"午餐");await type(inputs[1],"0.29");await type(inputs[2],"2024-02-29");
   const category=document.querySelector("select");await act(async()=>{category.value="Bills";category.dispatchEvent(new window.Event("change",{bubbles:true}));});
   await act(async()=>document.querySelector("form").dispatchEvent(new window.Event("submit",{bubbles:true,cancelable:true})));
@@ -55,4 +55,19 @@ test("confirmation dialog exposes alertdialog semantics and Escape uses its curr
   assert.equal(document.querySelector('[role="alertdialog"]').getAttribute("aria-modal"),"true");
   await act(async()=>document.dispatchEvent(new window.KeyboardEvent("keydown",{key:"Escape",bubbles:true,cancelable:true})));assert.equal(closed,1);
   await act(async()=>root.unmount());host.remove();
+});
+
+test("optional time/payment inputs can be entered, submitted and cleared without changing the date",async()=>{
+  const ui=await mountEditor();const time=document.querySelector('input[type="time"]');
+  const method=document.querySelectorAll("select")[1];
+  assert.equal(time.required,false);assert.equal(method.value,"");assert.equal(time.value,"");
+  await type(time,"00:00");
+  await act(async()=>{method.value="credit_card";method.dispatchEvent(new window.Event("change",{bubbles:true}));});
+  await act(async()=>document.querySelector("form").dispatchEvent(new window.Event("submit",{bubbles:true,cancelable:true})));
+  assert.equal(ui.saved[0].time,"00:00");assert.equal(ui.saved[0].paymentMethod,"credit_card");
+  const button=(key)=>[...document.querySelectorAll("button")].find(node=>node.textContent===key);
+  await act(async()=>button("expensesPanel.useCurrentTime").click());assert.match(ui.draft.time,/^\d{2}:\d{2}$/);assert.equal(ui.draft.date,initial.date);
+  await act(async()=>button("expensesPanel.clearTime").click());assert.equal(time.value,"");
+  await act(async()=>{method.value="";method.dispatchEvent(new window.Event("change",{bubbles:true}));});
+  assert.equal(ui.draft.paymentMethod,"");await ui.close();
 });

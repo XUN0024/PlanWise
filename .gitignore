@@ -1,4 +1,5 @@
 node_modules
+.preview-smoke/
 auth.json
 .env
 .env.local
@@ -18,3 +19,4 @@ auth.json
 .env.example.development.example
 .env.example.production.example
 .env.example.test.example
+/dist/

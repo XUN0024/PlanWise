@@ -217,6 +217,24 @@ test("real Supabase SDK standard request carries the current bearer token and ab
   assert.equal(request.init.body instanceof FormData, true);
 });
 
+test("private preview download uses the owner credential and forwards abort to the real SDK request", async () => {
+  let request;
+  const controller = new AbortController();
+  const service = load("src/services/attachmentService.jsx", {
+    "tus-js-client": {}, "@supabase/supabase-js": require("@supabase/supabase-js"),
+    "../lib/supabase": { supabase: {
+      auth: { getSession: async () => ({ data: { session: { user: { id: "u1" }, access_token: "preview-user-token" } } }) },
+    } },
+  }, { fetch: async (url, init) => { request = { url, init }; return new Response("private PDF", { status: 200, headers: { "Content-Type": "application/pdf" } }); } });
+  const blob = await service.downloadAttachment(record({ status: "ready" }), "u1", { signal: controller.signal });
+  assert.equal(await blob.text(), "private PDF");
+  assert.equal(new Headers(request.init.headers).get("authorization"), "Bearer preview-user-token");
+  assert.equal(request.init.signal, controller.signal);
+  await assert.rejects(service.downloadAttachment(record({ user_id: "u2" }), "u1", { signal: controller.signal }), (error) => error.code === "ATTACHMENT_AUTH");
+  controller.abort();
+  await assert.rejects(service.downloadAttachment(record(), "u1", { signal: controller.signal }), (error) => error.code === "ATTACHMENT_CANCELLED");
+});
+
 test("lost confirmation retries the same attachment without another object upload", async () => {
   const back = backend(); back.failComplete(true);
   await assert.rejects(back.service.uploadAttachment(uploadOptions()), /Confirmation/);
@@ -304,6 +322,7 @@ function panel(services = {}, props = {}) {
     react, "react-i18next": { useTranslation: () => ({ t: (key) => key }) },
     "@fortawesome/react-fontawesome": { FontAwesomeIcon: "icon" },
     "@fortawesome/free-solid-svg-icons": {},
+    "./AttachmentPreview": { __esModule: true, default: "preview" },
     "../services/attachmentService": {
       getAttachments: async () => [],
       uploadAttachment: async (options) => {
@@ -335,9 +354,22 @@ function panel(services = {}, props = {}) {
     async flush() { await tick(); render(); },
     text: () => nodes(tree).flatMap((node) => node.props.children).filter((value) => typeof value === "string").join(" "),
     button: (key) => nodes(tree).find((node) => node.type === "button" && node.props.children.includes(key)),
+    preview: () => nodes(tree).find((node) => node.type === "preview")?.props,
     unmount: () => slots.forEach((slot) => slot?.cleanup?.()),
   };
 }
+
+test("Preview precedes Delete for ready attachments and opening/closing preserves the note area", async () => {
+  const busy = [];
+  const app = panel({ getAttachments: async () => [record({ status: "ready" })] }, { onBusyChange: (value) => busy.push(value) });
+  app.render(); await app.flush();
+  assert.equal(app.button("preview.open").props.disabled, false);
+  app.button("preview.open").props.onClick(); app.render();
+  assert.equal(app.preview().record.id, "a1"); assert.equal(app.preview().userId, "u1");
+  assert.equal(busy.at(-1), true); assert.match(app.text(), /Note body/);
+  app.preview().onClose(); app.render(); assert.equal(app.preview(), undefined); assert.equal(busy.at(-1), false);
+  app.unmount();
+});
 const drag = (files = [], types = ["Files"]) => ({
   preventDefault() {}, stopPropagation() {},
   dataTransfer: { files, types, items: [], dropEffect: "" },

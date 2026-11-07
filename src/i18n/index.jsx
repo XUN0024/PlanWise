@@ -6,6 +6,22 @@ import LanguageDetector from "i18next-browser-languagedetector";
 const resources = {
   en: {
     translation: {
+      askPlanwise: {
+        scope:"General chat",scopeHint:"This stage sends only this conversation to Cloudflare. Notes, tasks, expenses and files are not connected yet.",
+        close:"Close chat",conversation:"Conversation",welcome:"How can I help?",welcomeHint:"Ask a question, brainstorm an idea, or plan your next step.",you:"You",thinking:"Preparing a reply…",
+        retry:"Retry",quota:"Today: {{remaining}} / {{limit}} requests left",quotaHint:"Daily request limits apply",clear:"Clear conversation",input:"Message",placeholder:"Ask PW AI…",stop:"Stop waiting",send:"Send",
+        memoryHint:"This window keeps your conversation until refresh. The server caches replies for retries.",
+        errors:{
+          AI_MODEL_UNAVAILABLE:"This account cannot use the selected model. Check Cloudflare model availability and account access.",
+          AI_INPUT_INVALID:"Enter up to 2000 characters. Shorten the message and try again.",AI_AUTH_REQUIRED:"Your session expired. Sign in again.",AI_AUTH_UNAVAILABLE:"Sign-in verification is temporarily unavailable. Retry shortly.",
+          AI_SERVER_CONFIG:"AI server configuration is incomplete. Check the Cloudflare and Supabase server secrets.",AI_SETUP_REQUIRED:"Run 20261107_ai_chat.sql in Supabase SQL Editor before using chat.",AI_DEPLOY_REQUIRED:"Deploy the ask-planwise Edge Function before using chat.",
+          AI_USER_DAILY_LIMIT:"Your daily request limit is reached. It resets at 08:00 Malaysia time.",AI_GLOBAL_DAILY_LIMIT:"PlanWise's shared daily AI budget is used up. Try again after 08:00 Malaysia time.",AI_RATE_LIMIT:"Too many requests. Wait a minute and retry.",
+          AI_BUSY:"AI is busy. Retry shortly.",AI_IN_PROGRESS:"This request is still running. Wait a moment and retry to check it.",AI_RETRY_NEW_REQUEST:"The previous attempt ended. Retry to start a new request.",AI_REQUEST_CONFLICT:"The request content changed. Send it as a new message.",AI_DISABLED:"AI chat is temporarily disabled.",
+          AI_PROVIDER_AUTH:"Cloudflare authentication failed. Check the server-side Token and Account ID.",AI_PROVIDER_LIMIT:"Cloudflare's quota or rate limit was reached. Retry later or check Workers AI usage.",AI_PROVIDER_UNAVAILABLE:"Cloudflare is temporarily unavailable. Retry later.",AI_EMPTY_RESPONSE:"The model returned no usable reply. Retry or shorten your question.",
+          AI_TIMEOUT:"The request took too long. Retry to check or restart it.",AI_DATABASE_ERROR:"AI usage tracking is unavailable. Retry later.",AI_INVALID_RESPONSE:"The AI reply could not be read. Retry shortly.",AI_ORIGIN_DENIED:"This app's address is not allowed. Configure AI_ALLOWED_ORIGINS on the server.",
+          AI_ABORTED:"Stopped waiting. The server may still finish and count this request; retry checks the original request first.",AI_NETWORK:"Could not connect to AI. Check your connection and retry.",AI_RESULT_PENDING:"A reply was generated but not yet confirmed. Retry to check the original request.",
+        },
+      },
       expensesPanel: {
         add: "Add expense", edit: "Edit expense", description: "Description", amount: "Amount (RM)", date: "Expense date", category: "Category", currency: "Currency",
         time: "Time", paymentMethod: "Payment method", optional: "Optional", notRecorded: "Not recorded",
@@ -213,6 +229,22 @@ const resources = {
   },
   zh: {
     translation: {
+      askPlanwise: {
+        scope:"普通对话",scopeHint:"本阶段仅将本次聊天内容发送至 Cloudflare，尚未接入笔记、任务、支出和文件。",
+        close:"关闭聊天",conversation:"聊天记录",welcome:"有什么需要帮助的？",welcomeHint:"可以提问、整理想法，或一起安排下一步。",you:"你",thinking:"正在生成回复…",
+        retry:"重试",quota:"今日剩余 {{remaining}} / {{limit}} 次",quotaHint:"每日请求次数有限",clear:"清空对话",input:"消息",placeholder:"向 PW AI 提问…",stop:"停止等待",send:"发送",
+        memoryHint:"会话在本窗口保留，刷新后清空；服务端保存回复缓存用于重试。",
+        errors:{
+          AI_MODEL_UNAVAILABLE:"当前账号无法使用所选模型，请检查 Cloudflare 模型开放情况和账号权限。",
+          AI_INPUT_INVALID:"请输入不超过 2000 字的消息，缩短内容后重试。",AI_AUTH_REQUIRED:"登录已失效，请重新登录。",AI_AUTH_UNAVAILABLE:"登录验证暂时不可用，请稍后重试。",
+          AI_SERVER_CONFIG:"AI 服务端配置不完整，请检查 Cloudflare 和 Supabase 服务端 Secrets。",AI_SETUP_REQUIRED:"请先在 Supabase SQL Editor 执行 20261107_ai_chat.sql。",AI_DEPLOY_REQUIRED:"请先部署 ask-planwise Edge Function。",
+          AI_USER_DAILY_LIMIT:"你今日的请求次数已用完，马来西亚时间上午 08:00 重置。",AI_GLOBAL_DAILY_LIMIT:"PlanWise 今日共享 AI 预算已用完，请在马来西亚时间上午 08:00 后再试。",AI_RATE_LIMIT:"请求过于频繁，请等待一分钟后重试。",
+          AI_BUSY:"AI 正忙，请稍后重试。",AI_IN_PROGRESS:"原请求仍在处理中，请稍后重试查看结果。",AI_RETRY_NEW_REQUEST:"上次请求已结束，再次重试会发起新请求。",AI_REQUEST_CONFLICT:"请求内容已变化，请作为新消息发送。",AI_DISABLED:"AI 对话已暂时停用。",
+          AI_PROVIDER_AUTH:"Cloudflare 验证失败，请检查服务端 Token 和 Account ID。",AI_PROVIDER_LIMIT:"Cloudflare 额度或速率受限，请稍后再试或检查 Workers AI 用量。",AI_PROVIDER_UNAVAILABLE:"Cloudflare 暂时不可用，请稍后重试。",AI_EMPTY_RESPONSE:"模型没有返回可用回复，请重试或缩短问题。",
+          AI_TIMEOUT:"等待时间过长，可重试检查或重新发起请求。",AI_DATABASE_ERROR:"AI 用量记录暂时不可用，请稍后重试。",AI_INVALID_RESPONSE:"无法读取 AI 回复，请稍后重试。",AI_ORIGIN_DENIED:"当前应用地址未获允许，请配置服务端 AI_ALLOWED_ORIGINS。",
+          AI_ABORTED:"已停止等待；服务端仍可能完成并计入额度，重试会先检查原请求。",AI_NETWORK:"无法连接 AI，请检查网络后重试。",AI_RESULT_PENDING:"回复已生成，但尚未确认保存；请重试检查原请求。",
+        },
+      },
       expensesPanel: {
         add: "新增支出", edit: "编辑支出", description: "描述", amount: "金额（RM）", date: "支出日期", category: "分类", currency: "币种",
         time: "时间", paymentMethod: "支付方式", optional: "选填", notRecorded: "未记录",

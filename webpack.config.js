@@ -8,8 +8,8 @@ const fs = require("fs");
 const envResult = dotenv.config({ path: path.resolve(__dirname, ".env") });
 const env = envResult.parsed || {};
 
-// Create environment variables object for DefinePlugin
-const envKeys = Object.keys(env).reduce((prev, next) => {
+// Only explicitly public configuration may enter the renderer bundle.
+const envKeys = ["REACT_APP_SUPABASE_URL", "REACT_APP_SUPABASE_ANON_KEY"].filter(key=>env[key]!==undefined).reduce((prev, next) => {
   prev[`process.env.${next}`] = JSON.stringify(env[next]);
   return prev;
 }, {});

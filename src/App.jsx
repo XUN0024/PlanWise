@@ -12,6 +12,7 @@ import Tasks from "./components/Tasks";
 import Notes from "./components/Notes";
 import Expenses from "./components/Expenses";
 import ErrorBoundary from "./components/ErrorBoundary";
+import AskPlanwise from "./components/AskPlanwise";
 import "./i18n/index.jsx"; // Initialize i18n
 
 // Protected Route Component
@@ -49,6 +50,7 @@ const AppRoutes = () => {
   return (
     <Router>
       <div className="App">
+        <AskPlanwise />
         <Routes>
           {/* Public Routes */}
           <Route

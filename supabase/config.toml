@@ -1,0 +1,5 @@
+project_id = "planwise"
+
+[functions.ask-planwise]
+verify_jwt = true
+entrypoint = "./functions/ask-planwise/index.ts"

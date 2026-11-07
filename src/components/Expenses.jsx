@@ -169,7 +169,7 @@ export default function Expenses() {
           <nav className="hidden md:flex gap-5 text-sm font-medium">{["dashboard", "tasks", "expenses", "notes"].map((name) =>
             <Link key={name} to={`/${name}`} className={name === "expenses" ? "text-blue-600" : "text-gray-500 hover:text-gray-700"}>{t(name)}</Link>)}</nav>
         </div>
-        <div className="flex items-center gap-3"><LanguageSwitcher /><span className="hidden sm:block text-sm text-gray-600">{user?.email}</span>
+        <div className="flex items-center gap-3"><LanguageSwitcher /><span data-planwise-ai-slot /><span className="hidden sm:block text-sm text-gray-600">{user?.email}</span>
           <button disabled={busy || receiptBusy} onClick={() => request({ type: "signOut" })} className="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm disabled:opacity-50">{t("signOut")}</button>
         </div>
       </div>

@@ -20,3 +20,5 @@ auth.json
 .env.example.production.example
 .env.example.test.example
 /dist/
+supabase/.temp/
+supabase/functions/.env*

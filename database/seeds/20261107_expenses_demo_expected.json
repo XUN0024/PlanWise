@@ -1,0 +1,4310 @@
+{
+  "batch": "PWDEMO-20261107-V1",
+  "marker": "[PWDEMO-20261107-V1]",
+  "asOf": "2026-11-07",
+  "dateFrom": "2026-05-01",
+  "dateTo": "2026-11-06",
+  "currency": "MYR",
+  "timezone": "Asia/Kuala_Lumpur",
+  "rowCount": 256,
+  "totals": {
+    "count": "256",
+    "total_cents": "1448064",
+    "average_cents": "5657",
+    "granularity": "month",
+    "categories": [
+      {
+        "key": "Bills",
+        "count": "27",
+        "total_cents": "679735"
+      },
+      {
+        "key": "Shopping",
+        "count": "13",
+        "total_cents": "316140"
+      },
+      {
+        "key": "Food",
+        "count": "129",
+        "total_cents": "244760"
+      },
+      {
+        "key": "Health",
+        "count": "7",
+        "total_cents": "80200"
+      },
+      {
+        "key": "Transport",
+        "count": "51",
+        "total_cents": "62740"
+      },
+      {
+        "key": "Entertainment",
+        "count": "18",
+        "total_cents": "57105"
+      },
+      {
+        "key": "Other",
+        "count": "11",
+        "total_cents": "7384"
+      }
+    ],
+    "methods": [
+      {
+        "key": "bank_transfer",
+        "count": "14",
+        "total_cents": "596435"
+      },
+      {
+        "key": "credit_card",
+        "count": "21",
+        "total_cents": "391005"
+      },
+      {
+        "key": "debit_card",
+        "count": "62",
+        "total_cents": "260575"
+      },
+      {
+        "key": "e_wallet",
+        "count": "88",
+        "total_cents": "122965"
+      },
+      {
+        "key": "cash",
+        "count": "61",
+        "total_cents": "70225"
+      },
+      {
+        "key": "unrecorded",
+        "count": "4",
+        "total_cents": "4160"
+      },
+      {
+        "key": "other",
+        "count": "6",
+        "total_cents": "2699"
+      }
+    ],
+    "trend": [
+      {
+        "date": "2026-05-01",
+        "count": "39",
+        "total_cents": "163680"
+      },
+      {
+        "date": "2026-06-01",
+        "count": "40",
+        "total_cents": "166211"
+      },
+      {
+        "date": "2026-07-01",
+        "count": "41",
+        "total_cents": "193745"
+      },
+      {
+        "date": "2026-08-01",
+        "count": "42",
+        "total_cents": "168335"
+      },
+      {
+        "date": "2026-09-01",
+        "count": "41",
+        "total_cents": "229283"
+      },
+      {
+        "date": "2026-10-01",
+        "count": "41",
+        "total_cents": "422815"
+      },
+      {
+        "date": "2026-11-01",
+        "count": "12",
+        "total_cents": "103995"
+      }
+    ]
+  },
+  "monthly": [
+    {
+      "date": "2026-05-01",
+      "count": "39",
+      "total_cents": "163680"
+    },
+    {
+      "date": "2026-06-01",
+      "count": "40",
+      "total_cents": "166211"
+    },
+    {
+      "date": "2026-07-01",
+      "count": "41",
+      "total_cents": "193745"
+    },
+    {
+      "date": "2026-08-01",
+      "count": "42",
+      "total_cents": "168335"
+    },
+    {
+      "date": "2026-09-01",
+      "count": "41",
+      "total_cents": "229283"
+    },
+    {
+      "date": "2026-10-01",
+      "count": "41",
+      "total_cents": "422815"
+    },
+    {
+      "date": "2026-11-01",
+      "count": "12",
+      "total_cents": "103995"
+    }
+  ],
+  "cases": [
+    {
+      "id": "all",
+      "question": "这批模拟支出一共有多少笔、总额和平均每笔是多少？",
+      "filters": {
+        "search": "[PWDEMO-20261107-V1]"
+      },
+      "expected": {
+        "count": "256",
+        "total_cents": "1448064",
+        "average_cents": "5657",
+        "granularity": "month",
+        "categories": [
+          {
+            "key": "Bills",
+            "count": "27",
+            "total_cents": "679735"
+          },
+          {
+            "key": "Shopping",
+            "count": "13",
+            "total_cents": "316140"
+          },
+          {
+            "key": "Food",
+            "count": "129",
+            "total_cents": "244760"
+          },
+          {
+            "key": "Health",
+            "count": "7",
+            "total_cents": "80200"
+          },
+          {
+            "key": "Transport",
+            "count": "51",
+            "total_cents": "62740"
+          },
+          {
+            "key": "Entertainment",
+            "count": "18",
+            "total_cents": "57105"
+          },
+          {
+            "key": "Other",
+            "count": "11",
+            "total_cents": "7384"
+          }
+        ],
+        "methods": [
+          {
+            "key": "bank_transfer",
+            "count": "14",
+            "total_cents": "596435"
+          },
+          {
+            "key": "credit_card",
+            "count": "21",
+            "total_cents": "391005"
+          },
+          {
+            "key": "debit_card",
+            "count": "62",
+            "total_cents": "260575"
+          },
+          {
+            "key": "e_wallet",
+            "count": "88",
+            "total_cents": "122965"
+          },
+          {
+            "key": "cash",
+            "count": "61",
+            "total_cents": "70225"
+          },
+          {
+            "key": "unrecorded",
+            "count": "4",
+            "total_cents": "4160"
+          },
+          {
+            "key": "other",
+            "count": "6",
+            "total_cents": "2699"
+          }
+        ],
+        "trend": [
+          {
+            "date": "2026-05-01",
+            "count": "39",
+            "total_cents": "163680"
+          },
+          {
+            "date": "2026-06-01",
+            "count": "40",
+            "total_cents": "166211"
+          },
+          {
+            "date": "2026-07-01",
+            "count": "41",
+            "total_cents": "193745"
+          },
+          {
+            "date": "2026-08-01",
+            "count": "42",
+            "total_cents": "168335"
+          },
+          {
+            "date": "2026-09-01",
+            "count": "41",
+            "total_cents": "229283"
+          },
+          {
+            "date": "2026-10-01",
+            "count": "41",
+            "total_cents": "422815"
+          },
+          {
+            "date": "2026-11-01",
+            "count": "12",
+            "total_cents": "103995"
+          }
+        ]
+      }
+    },
+    {
+      "id": "october",
+      "question": "2026 年 10 月支出总额和笔数是多少？",
+      "filters": {
+        "from": "2026-10-01",
+        "to": "2026-10-31",
+        "search": "[PWDEMO-20261107-V1]"
+      },
+      "expected": {
+        "count": "41",
+        "total_cents": "422815",
+        "average_cents": "10313",
+        "granularity": "day",
+        "categories": [
+          {
+            "key": "Shopping",
+            "count": "3",
+            "total_cents": "261490"
+          },
+          {
+            "key": "Bills",
+            "count": "4",
+            "total_cents": "97875"
+          },
+          {
+            "key": "Food",
+            "count": "21",
+            "total_cents": "42550"
+          },
+          {
+            "key": "Entertainment",
+            "count": "3",
+            "total_cents": "9855"
+          },
+          {
+            "key": "Transport",
+            "count": "8",
+            "total_cents": "6220"
+          },
+          {
+            "key": "Health",
+            "count": "1",
+            "total_cents": "3900"
+          },
+          {
+            "key": "Other",
+            "count": "1",
+            "total_cents": "925"
+          }
+        ],
+        "methods": [
+          {
+            "key": "credit_card",
+            "count": "4",
+            "total_cents": "259755"
+          },
+          {
+            "key": "bank_transfer",
+            "count": "2",
+            "total_cents": "85475"
+          },
+          {
+            "key": "debit_card",
+            "count": "10",
+            "total_cents": "43345"
+          },
+          {
+            "key": "e_wallet",
+            "count": "15",
+            "total_cents": "22200"
+          },
+          {
+            "key": "cash",
+            "count": "9",
+            "total_cents": "11115"
+          },
+          {
+            "key": "unrecorded",
+            "count": "1",
+            "total_cents": "925"
+          }
+        ],
+        "trend": [
+          {
+            "date": "2026-10-01",
+            "count": "2",
+            "total_cents": "75875"
+          },
+          {
+            "date": "2026-10-02",
+            "count": "2",
+            "total_cents": "1365"
+          },
+          {
+            "date": "2026-10-03",
+            "count": "1",
+            "total_cents": "10475"
+          },
+          {
+            "date": "2026-10-04",
+            "count": "1",
+            "total_cents": "1425"
+          },
+          {
+            "date": "2026-10-05",
+            "count": "2",
+            "total_cents": "9580"
+          },
+          {
+            "date": "2026-10-06",
+            "count": "1",
+            "total_cents": "1675"
+          },
+          {
+            "date": "2026-10-07",
+            "count": "1",
+            "total_cents": "900"
+          },
+          {
+            "date": "2026-10-08",
+            "count": "2",
+            "total_cents": "3280"
+          },
+          {
+            "date": "2026-10-09",
+            "count": "2",
+            "total_cents": "8955"
+          },
+          {
+            "date": "2026-10-10",
+            "count": "1",
+            "total_cents": "2025"
+          },
+          {
+            "date": "2026-10-11",
+            "count": "1",
+            "total_cents": "4540"
+          },
+          {
+            "date": "2026-10-12",
+            "count": "2",
+            "total_cents": "4575"
+          },
+          {
+            "date": "2026-10-13",
+            "count": "1",
+            "total_cents": "350"
+          },
+          {
+            "date": "2026-10-14",
+            "count": "1",
+            "total_cents": "1515"
+          },
+          {
+            "date": "2026-10-15",
+            "count": "1",
+            "total_cents": "3900"
+          },
+          {
+            "date": "2026-10-16",
+            "count": "1",
+            "total_cents": "1775"
+          },
+          {
+            "date": "2026-10-17",
+            "count": "2",
+            "total_cents": "1590"
+          },
+          {
+            "date": "2026-10-18",
+            "count": "2",
+            "total_cents": "251125"
+          },
+          {
+            "date": "2026-10-19",
+            "count": "1",
+            "total_cents": "3115"
+          },
+          {
+            "date": "2026-10-20",
+            "count": "2",
+            "total_cents": "3300"
+          },
+          {
+            "date": "2026-10-21",
+            "count": "1",
+            "total_cents": "1220"
+          },
+          {
+            "date": "2026-10-22",
+            "count": "1",
+            "total_cents": "1625"
+          },
+          {
+            "date": "2026-10-23",
+            "count": "1",
+            "total_cents": "8075"
+          },
+          {
+            "date": "2026-10-24",
+            "count": "2",
+            "total_cents": "8025"
+          },
+          {
+            "date": "2026-10-25",
+            "count": "1",
+            "total_cents": "800"
+          },
+          {
+            "date": "2026-10-26",
+            "count": "2",
+            "total_cents": "6740"
+          },
+          {
+            "date": "2026-10-27",
+            "count": "1",
+            "total_cents": "1750"
+          },
+          {
+            "date": "2026-10-28",
+            "count": "1",
+            "total_cents": "1425"
+          },
+          {
+            "date": "2026-10-29",
+            "count": "1",
+            "total_cents": "240"
+          },
+          {
+            "date": "2026-10-31",
+            "count": "1",
+            "total_cents": "1575"
+          }
+        ]
+      }
+    },
+    {
+      "id": "september",
+      "question": "2026 年 9 月支出总额和笔数是多少？",
+      "filters": {
+        "from": "2026-09-01",
+        "to": "2026-09-30",
+        "search": "[PWDEMO-20261107-V1]"
+      },
+      "expected": {
+        "count": "41",
+        "total_cents": "229283",
+        "average_cents": "5592",
+        "granularity": "day",
+        "categories": [
+          {
+            "key": "Bills",
+            "count": "4",
+            "total_cents": "97740"
+          },
+          {
+            "key": "Health",
+            "count": "2",
+            "total_cents": "61820"
+          },
+          {
+            "key": "Food",
+            "count": "21",
+            "total_cents": "41603"
+          },
+          {
+            "key": "Shopping",
+            "count": "2",
+            "total_cents": "11370"
+          },
+          {
+            "key": "Entertainment",
+            "count": "3",
+            "total_cents": "9720"
+          },
+          {
+            "key": "Transport",
+            "count": "8",
+            "total_cents": "6120"
+          },
+          {
+            "key": "Other",
+            "count": "1",
+            "total_cents": "910"
+          }
+        ],
+        "methods": [
+          {
+            "key": "bank_transfer",
+            "count": "2",
+            "total_cents": "85340"
+          },
+          {
+            "key": "credit_card",
+            "count": "4",
+            "total_cents": "67720"
+          },
+          {
+            "key": "debit_card",
+            "count": "10",
+            "total_cents": "42688"
+          },
+          {
+            "key": "e_wallet",
+            "count": "14",
+            "total_cents": "20290"
+          },
+          {
+            "key": "cash",
+            "count": "9",
+            "total_cents": "10860"
+          },
+          {
+            "key": "unrecorded",
+            "count": "1",
+            "total_cents": "1475"
+          },
+          {
+            "key": "other",
+            "count": "1",
+            "total_cents": "910"
+          }
+        ],
+        "trend": [
+          {
+            "date": "2026-09-01",
+            "count": "2",
+            "total_cents": "75840"
+          },
+          {
+            "date": "2026-09-02",
+            "count": "2",
+            "total_cents": "1330"
+          },
+          {
+            "date": "2026-09-03",
+            "count": "1",
+            "total_cents": "10340"
+          },
+          {
+            "date": "2026-09-04",
+            "count": "1",
+            "total_cents": "1390"
+          },
+          {
+            "date": "2026-09-05",
+            "count": "2",
+            "total_cents": "9580"
+          },
+          {
+            "date": "2026-09-06",
+            "count": "1",
+            "total_cents": "1640"
+          },
+          {
+            "date": "2026-09-07",
+            "count": "1",
+            "total_cents": "880"
+          },
+          {
+            "date": "2026-09-08",
+            "count": "2",
+            "total_cents": "3200"
+          },
+          {
+            "date": "2026-09-09",
+            "count": "2",
+            "total_cents": "8724"
+          },
+          {
+            "date": "2026-09-10",
+            "count": "1",
+            "total_cents": "1990"
+          },
+          {
+            "date": "2026-09-11",
+            "count": "1",
+            "total_cents": "4430"
+          },
+          {
+            "date": "2026-09-12",
+            "count": "3",
+            "total_cents": "6015"
+          },
+          {
+            "date": "2026-09-13",
+            "count": "1",
+            "total_cents": "350"
+          },
+          {
+            "date": "2026-09-14",
+            "count": "1",
+            "total_cents": "1480"
+          },
+          {
+            "date": "2026-09-15",
+            "count": "1",
+            "total_cents": "3820"
+          },
+          {
+            "date": "2026-09-16",
+            "count": "2",
+            "total_cents": "59740"
+          },
+          {
+            "date": "2026-09-17",
+            "count": "2",
+            "total_cents": "1570"
+          },
+          {
+            "date": "2026-09-18",
+            "count": "1",
+            "total_cents": "1190"
+          },
+          {
+            "date": "2026-09-19",
+            "count": "1",
+            "total_cents": "3070"
+          },
+          {
+            "date": "2026-09-20",
+            "count": "2",
+            "total_cents": "3250"
+          },
+          {
+            "date": "2026-09-21",
+            "count": "1",
+            "total_cents": "1220"
+          },
+          {
+            "date": "2026-09-22",
+            "count": "1",
+            "total_cents": "1590"
+          },
+          {
+            "date": "2026-09-23",
+            "count": "1",
+            "total_cents": "7944"
+          },
+          {
+            "date": "2026-09-24",
+            "count": "2",
+            "total_cents": "7880"
+          },
+          {
+            "date": "2026-09-25",
+            "count": "1",
+            "total_cents": "800"
+          },
+          {
+            "date": "2026-09-26",
+            "count": "2",
+            "total_cents": "6660"
+          },
+          {
+            "date": "2026-09-27",
+            "count": "1",
+            "total_cents": "1730"
+          },
+          {
+            "date": "2026-09-28",
+            "count": "1",
+            "total_cents": "1390"
+          },
+          {
+            "date": "2026-09-29",
+            "count": "1",
+            "total_cents": "240"
+          }
+        ]
+      }
+    },
+    {
+      "id": "october_food",
+      "question": "10 月餐饮支出多少？",
+      "filters": {
+        "from": "2026-10-01",
+        "to": "2026-10-31",
+        "category": "Food",
+        "search": "[PWDEMO-20261107-V1]"
+      },
+      "expected": {
+        "count": "21",
+        "total_cents": "42550",
+        "average_cents": "2026",
+        "granularity": "day",
+        "categories": [
+          {
+            "key": "Food",
+            "count": "21",
+            "total_cents": "42550"
+          }
+        ],
+        "methods": [
+          {
+            "key": "debit_card",
+            "count": "7",
+            "total_cents": "22855"
+          },
+          {
+            "key": "e_wallet",
+            "count": "9",
+            "total_cents": "13870"
+          },
+          {
+            "key": "cash",
+            "count": "5",
+            "total_cents": "5825"
+          }
+        ],
+        "trend": [
+          {
+            "date": "2026-10-01",
+            "count": "1",
+            "total_cents": "875"
+          },
+          {
+            "date": "2026-10-02",
+            "count": "1",
+            "total_cents": "1125"
+          },
+          {
+            "date": "2026-10-04",
+            "count": "1",
+            "total_cents": "1425"
+          },
+          {
+            "date": "2026-10-06",
+            "count": "1",
+            "total_cents": "1675"
+          },
+          {
+            "date": "2026-10-07",
+            "count": "1",
+            "total_cents": "900"
+          },
+          {
+            "date": "2026-10-08",
+            "count": "1",
+            "total_cents": "1355"
+          },
+          {
+            "date": "2026-10-09",
+            "count": "1",
+            "total_cents": "6505"
+          },
+          {
+            "date": "2026-10-10",
+            "count": "1",
+            "total_cents": "2025"
+          },
+          {
+            "date": "2026-10-12",
+            "count": "1",
+            "total_cents": "1075"
+          },
+          {
+            "date": "2026-10-14",
+            "count": "1",
+            "total_cents": "1515"
+          },
+          {
+            "date": "2026-10-16",
+            "count": "1",
+            "total_cents": "1775"
+          },
+          {
+            "date": "2026-10-17",
+            "count": "1",
+            "total_cents": "1350"
+          },
+          {
+            "date": "2026-10-18",
+            "count": "1",
+            "total_cents": "1225"
+          },
+          {
+            "date": "2026-10-20",
+            "count": "1",
+            "total_cents": "2375"
+          },
+          {
+            "date": "2026-10-22",
+            "count": "1",
+            "total_cents": "1625"
+          },
+          {
+            "date": "2026-10-23",
+            "count": "1",
+            "total_cents": "8075"
+          },
+          {
+            "date": "2026-10-24",
+            "count": "1",
+            "total_cents": "975"
+          },
+          {
+            "date": "2026-10-26",
+            "count": "1",
+            "total_cents": "1925"
+          },
+          {
+            "date": "2026-10-27",
+            "count": "1",
+            "total_cents": "1750"
+          },
+          {
+            "date": "2026-10-28",
+            "count": "1",
+            "total_cents": "1425"
+          },
+          {
+            "date": "2026-10-31",
+            "count": "1",
+            "total_cents": "1575"
+          }
+        ]
+      }
+    },
+    {
+      "id": "september_health",
+      "question": "9 月健康类支出多少，有哪些已记录的原因？",
+      "filters": {
+        "from": "2026-09-01",
+        "to": "2026-09-30",
+        "category": "Health",
+        "search": "[PWDEMO-20261107-V1]"
+      },
+      "expected": {
+        "count": "2",
+        "total_cents": "61820",
+        "average_cents": "30910",
+        "granularity": "day",
+        "categories": [
+          {
+            "key": "Health",
+            "count": "2",
+            "total_cents": "61820"
+          }
+        ],
+        "methods": [
+          {
+            "key": "credit_card",
+            "count": "1",
+            "total_cents": "58000"
+          },
+          {
+            "key": "cash",
+            "count": "1",
+            "total_cents": "3820"
+          }
+        ],
+        "trend": [
+          {
+            "date": "2026-09-15",
+            "count": "1",
+            "total_cents": "3820"
+          },
+          {
+            "date": "2026-09-16",
+            "count": "1",
+            "total_cents": "58000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "july_transport",
+      "question": "7 月交通支出多少？",
+      "filters": {
+        "from": "2026-07-01",
+        "to": "2026-07-31",
+        "category": "Transport",
+        "search": "[PWDEMO-20261107-V1]"
+      },
+      "expected": {
+        "count": "9",
+        "total_cents": "31920",
+        "average_cents": "3547",
+        "granularity": "day",
+        "categories": [
+          {
+            "key": "Transport",
+            "count": "9",
+            "total_cents": "31920"
+          }
+        ],
+        "methods": [
+          {
+            "key": "credit_card",
+            "count": "1",
+            "total_cents": "26000"
+          },
+          {
+            "key": "e_wallet",
+            "count": "5",
+            "total_cents": "4530"
+          },
+          {
+            "key": "cash",
+            "count": "3",
+            "total_cents": "1390"
+          }
+        ],
+        "trend": [
+          {
+            "date": "2026-07-02",
+            "count": "1",
+            "total_cents": "240"
+          },
+          {
+            "date": "2026-07-05",
+            "count": "1",
+            "total_cents": "680"
+          },
+          {
+            "date": "2026-07-09",
+            "count": "1",
+            "total_cents": "2150"
+          },
+          {
+            "date": "2026-07-13",
+            "count": "1",
+            "total_cents": "350"
+          },
+          {
+            "date": "2026-07-17",
+            "count": "2",
+            "total_cents": "26240"
+          },
+          {
+            "date": "2026-07-21",
+            "count": "1",
+            "total_cents": "1220"
+          },
+          {
+            "date": "2026-07-25",
+            "count": "1",
+            "total_cents": "800"
+          },
+          {
+            "date": "2026-07-29",
+            "count": "1",
+            "total_cents": "240"
+          }
+        ]
+      }
+    },
+    {
+      "id": "october_credit_card",
+      "question": "10 月通过信用卡付款的支出是多少？",
+      "filters": {
+        "from": "2026-10-01",
+        "to": "2026-10-31",
+        "method": "credit_card",
+        "search": "[PWDEMO-20261107-V1]"
+      },
+      "expected": {
+        "count": "4",
+        "total_cents": "259755",
+        "average_cents": "64939",
+        "granularity": "day",
+        "categories": [
+          {
+            "key": "Shopping",
+            "count": "1",
+            "total_cents": "249900"
+          },
+          {
+            "key": "Entertainment",
+            "count": "3",
+            "total_cents": "9855"
+          }
+        ],
+        "methods": [
+          {
+            "key": "credit_card",
+            "count": "4",
+            "total_cents": "259755"
+          }
+        ],
+        "trend": [
+          {
+            "date": "2026-10-08",
+            "count": "1",
+            "total_cents": "1925"
+          },
+          {
+            "date": "2026-10-18",
+            "count": "1",
+            "total_cents": "249900"
+          },
+          {
+            "date": "2026-10-19",
+            "count": "1",
+            "total_cents": "3115"
+          },
+          {
+            "date": "2026-10-26",
+            "count": "1",
+            "total_cents": "4815"
+          }
+        ]
+      }
+    },
+    {
+      "id": "unrecorded",
+      "question": "没有记录付款方式的支出有多少笔、多少钱？",
+      "filters": {
+        "method": "unrecorded",
+        "search": "[PWDEMO-20261107-V1]"
+      },
+      "expected": {
+        "count": "4",
+        "total_cents": "4160",
+        "average_cents": "1040",
+        "granularity": "month",
+        "categories": [
+          {
+            "key": "Other",
+            "count": "3",
+            "total_cents": "2685"
+          },
+          {
+            "key": "Food",
+            "count": "1",
+            "total_cents": "1475"
+          }
+        ],
+        "methods": [
+          {
+            "key": "unrecorded",
+            "count": "4",
+            "total_cents": "4160"
+          }
+        ],
+        "trend": [
+          {
+            "date": "2026-06-01",
+            "count": "1",
+            "total_cents": "865"
+          },
+          {
+            "date": "2026-08-01",
+            "count": "1",
+            "total_cents": "895"
+          },
+          {
+            "date": "2026-09-01",
+            "count": "1",
+            "total_cents": "1475"
+          },
+          {
+            "date": "2026-10-01",
+            "count": "1",
+            "total_cents": "925"
+          }
+        ]
+      }
+    },
+    {
+      "id": "precision",
+      "question": "精度核对的 0.10、0.20、0.29 三笔合计多少？",
+      "filters": {
+        "search": "[PWDEMO-20261107-V1] 精度核对"
+      },
+      "expected": {
+        "count": "3",
+        "total_cents": "59",
+        "average_cents": "20",
+        "granularity": "day",
+        "categories": [
+          {
+            "key": "Other",
+            "count": "3",
+            "total_cents": "59"
+          }
+        ],
+        "methods": [
+          {
+            "key": "other",
+            "count": "3",
+            "total_cents": "59"
+          }
+        ],
+        "trend": [
+          {
+            "date": "2026-08-31",
+            "count": "3",
+            "total_cents": "59"
+          }
+        ]
+      }
+    },
+    {
+      "id": "month_boundary",
+      "question": "十月底和十一月初两笔边界核对合计多少？",
+      "filters": {
+        "from": "2026-10-31",
+        "to": "2026-11-01",
+        "search": "[PWDEMO-20261107-V1] 边界核对"
+      },
+      "expected": {
+        "count": "2",
+        "total_cents": "2400",
+        "average_cents": "1200",
+        "granularity": "day",
+        "categories": [
+          {
+            "key": "Food",
+            "count": "2",
+            "total_cents": "2400"
+          }
+        ],
+        "methods": [
+          {
+            "key": "e_wallet",
+            "count": "2",
+            "total_cents": "2400"
+          }
+        ],
+        "trend": [
+          {
+            "date": "2026-10-31",
+            "count": "1",
+            "total_cents": "1575"
+          },
+          {
+            "date": "2026-11-01",
+            "count": "1",
+            "total_cents": "825"
+          }
+        ]
+      }
+    },
+    {
+      "id": "june_july_boundary",
+      "question": "六月底和七月初两笔边界核对合计多少？",
+      "filters": {
+        "from": "2026-06-30",
+        "to": "2026-07-01",
+        "search": "[PWDEMO-20261107-V1] 边界核对"
+      },
+      "expected": {
+        "count": "2",
+        "total_cents": "2000",
+        "average_cents": "1000",
+        "granularity": "day",
+        "categories": [
+          {
+            "key": "Other",
+            "count": "2",
+            "total_cents": "2000"
+          }
+        ],
+        "methods": [
+          {
+            "key": "cash",
+            "count": "2",
+            "total_cents": "2000"
+          }
+        ],
+        "trend": [
+          {
+            "date": "2026-06-30",
+            "count": "1",
+            "total_cents": "999"
+          },
+          {
+            "date": "2026-07-01",
+            "count": "1",
+            "total_cents": "1001"
+          }
+        ]
+      }
+    },
+    {
+      "id": "zero_day",
+      "question": "2026-08-30 有没有支出？",
+      "filters": {
+        "from": "2026-08-30",
+        "to": "2026-08-30",
+        "search": "[PWDEMO-20261107-V1]"
+      },
+      "expected": {
+        "count": "0",
+        "total_cents": "0",
+        "average_cents": "0",
+        "granularity": "day",
+        "categories": [],
+        "methods": [],
+        "trend": []
+      }
+    },
+    {
+      "id": "last_seven_days",
+      "question": "以 2026-11-07 为今天，近七天含今天的支出是多少？",
+      "filters": {
+        "from": "2026-11-01",
+        "to": "2026-11-07",
+        "search": "[PWDEMO-20261107-V1]"
+      },
+      "expected": {
+        "count": "12",
+        "total_cents": "103995",
+        "average_cents": "8666",
+        "granularity": "day",
+        "categories": [
+          {
+            "key": "Bills",
+            "count": "3",
+            "total_cents": "94510"
+          },
+          {
+            "key": "Food",
+            "count": "7",
+            "total_cents": "8565"
+          },
+          {
+            "key": "Transport",
+            "count": "2",
+            "total_cents": "920"
+          }
+        ],
+        "methods": [
+          {
+            "key": "bank_transfer",
+            "count": "2",
+            "total_cents": "85610"
+          },
+          {
+            "key": "debit_card",
+            "count": "2",
+            "total_cents": "10360"
+          },
+          {
+            "key": "cash",
+            "count": "5",
+            "total_cents": "5360"
+          },
+          {
+            "key": "e_wallet",
+            "count": "3",
+            "total_cents": "2665"
+          }
+        ],
+        "trend": [
+          {
+            "date": "2026-11-01",
+            "count": "3",
+            "total_cents": "76735"
+          },
+          {
+            "date": "2026-11-02",
+            "count": "2",
+            "total_cents": "1400"
+          },
+          {
+            "date": "2026-11-03",
+            "count": "1",
+            "total_cents": "10610"
+          },
+          {
+            "date": "2026-11-04",
+            "count": "1",
+            "total_cents": "1460"
+          },
+          {
+            "date": "2026-11-05",
+            "count": "2",
+            "total_cents": "9580"
+          },
+          {
+            "date": "2026-11-06",
+            "count": "3",
+            "total_cents": "4210"
+          }
+        ]
+      }
+    },
+    {
+      "id": "today",
+      "question": "以 2026-11-07 为今天，今天花了多少钱？",
+      "filters": {
+        "from": "2026-11-07",
+        "to": "2026-11-07",
+        "search": "[PWDEMO-20261107-V1]"
+      },
+      "expected": {
+        "count": "0",
+        "total_cents": "0",
+        "average_cents": "0",
+        "granularity": "day",
+        "categories": [],
+        "methods": [],
+        "trend": []
+      }
+    },
+    {
+      "id": "november_to_date",
+      "question": "截至 2026-11-07，本月目前花了多少钱？",
+      "filters": {
+        "from": "2026-11-01",
+        "to": "2026-11-07",
+        "search": "[PWDEMO-20261107-V1]"
+      },
+      "expected": {
+        "count": "12",
+        "total_cents": "103995",
+        "average_cents": "8666",
+        "granularity": "day",
+        "categories": [
+          {
+            "key": "Bills",
+            "count": "3",
+            "total_cents": "94510"
+          },
+          {
+            "key": "Food",
+            "count": "7",
+            "total_cents": "8565"
+          },
+          {
+            "key": "Transport",
+            "count": "2",
+            "total_cents": "920"
+          }
+        ],
+        "methods": [
+          {
+            "key": "bank_transfer",
+            "count": "2",
+            "total_cents": "85610"
+          },
+          {
+            "key": "debit_card",
+            "count": "2",
+            "total_cents": "10360"
+          },
+          {
+            "key": "cash",
+            "count": "5",
+            "total_cents": "5360"
+          },
+          {
+            "key": "e_wallet",
+            "count": "3",
+            "total_cents": "2665"
+          }
+        ],
+        "trend": [
+          {
+            "date": "2026-11-01",
+            "count": "3",
+            "total_cents": "76735"
+          },
+          {
+            "date": "2026-11-02",
+            "count": "2",
+            "total_cents": "1400"
+          },
+          {
+            "date": "2026-11-03",
+            "count": "1",
+            "total_cents": "10610"
+          },
+          {
+            "date": "2026-11-04",
+            "count": "1",
+            "total_cents": "1460"
+          },
+          {
+            "date": "2026-11-05",
+            "count": "2",
+            "total_cents": "9580"
+          },
+          {
+            "date": "2026-11-06",
+            "count": "3",
+            "total_cents": "4210"
+          }
+        ]
+      }
+    },
+    {
+      "id": "october_same_days",
+      "question": "10 月 1–6 日花了多少钱，用于与 11 月 1–6 日比较？",
+      "filters": {
+        "from": "2026-10-01",
+        "to": "2026-10-06",
+        "search": "[PWDEMO-20261107-V1]"
+      },
+      "expected": {
+        "count": "9",
+        "total_cents": "100395",
+        "average_cents": "11155",
+        "granularity": "day",
+        "categories": [
+          {
+            "key": "Bills",
+            "count": "3",
+            "total_cents": "94375"
+          },
+          {
+            "key": "Food",
+            "count": "4",
+            "total_cents": "5100"
+          },
+          {
+            "key": "Transport",
+            "count": "2",
+            "total_cents": "920"
+          }
+        ],
+        "methods": [
+          {
+            "key": "bank_transfer",
+            "count": "2",
+            "total_cents": "85475"
+          },
+          {
+            "key": "debit_card",
+            "count": "2",
+            "total_cents": "10325"
+          },
+          {
+            "key": "cash",
+            "count": "3",
+            "total_cents": "2790"
+          },
+          {
+            "key": "e_wallet",
+            "count": "2",
+            "total_cents": "1805"
+          }
+        ],
+        "trend": [
+          {
+            "date": "2026-10-01",
+            "count": "2",
+            "total_cents": "75875"
+          },
+          {
+            "date": "2026-10-02",
+            "count": "2",
+            "total_cents": "1365"
+          },
+          {
+            "date": "2026-10-03",
+            "count": "1",
+            "total_cents": "10475"
+          },
+          {
+            "date": "2026-10-04",
+            "count": "1",
+            "total_cents": "1425"
+          },
+          {
+            "date": "2026-10-05",
+            "count": "2",
+            "total_cents": "9580"
+          },
+          {
+            "date": "2026-10-06",
+            "count": "1",
+            "total_cents": "1675"
+          }
+        ]
+      }
+    },
+    {
+      "id": "coffee",
+      "question": "这批模拟记录中咖啡消费合计多少？",
+      "filters": {
+        "search": "[PWDEMO-20261107-V1] 咖啡"
+      },
+      "expected": {
+        "count": "18",
+        "total_cents": "23100",
+        "average_cents": "1283",
+        "granularity": "month",
+        "categories": [
+          {
+            "key": "Food",
+            "count": "18",
+            "total_cents": "23100"
+          }
+        ],
+        "methods": [
+          {
+            "key": "e_wallet",
+            "count": "18",
+            "total_cents": "23100"
+          }
+        ],
+        "trend": [
+          {
+            "date": "2026-05-01",
+            "count": "3",
+            "total_cents": "3700"
+          },
+          {
+            "date": "2026-06-01",
+            "count": "3",
+            "total_cents": "3760"
+          },
+          {
+            "date": "2026-07-01",
+            "count": "3",
+            "total_cents": "3820"
+          },
+          {
+            "date": "2026-08-01",
+            "count": "3",
+            "total_cents": "3880"
+          },
+          {
+            "date": "2026-09-01",
+            "count": "3",
+            "total_cents": "3940"
+          },
+          {
+            "date": "2026-10-01",
+            "count": "3",
+            "total_cents": "4000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "large_payments",
+      "question": "单笔不少于 RM 500 的支出有几笔、合计多少？",
+      "filters": {
+        "min": 50000,
+        "search": "[PWDEMO-20261107-V1]"
+      },
+      "expected": {
+        "count": "9",
+        "total_cents": "832900",
+        "average_cents": "92544",
+        "granularity": "month",
+        "categories": [
+          {
+            "key": "Bills",
+            "count": "7",
+            "total_cents": "525000"
+          },
+          {
+            "key": "Shopping",
+            "count": "1",
+            "total_cents": "249900"
+          },
+          {
+            "key": "Health",
+            "count": "1",
+            "total_cents": "58000"
+          }
+        ],
+        "methods": [
+          {
+            "key": "bank_transfer",
+            "count": "7",
+            "total_cents": "525000"
+          },
+          {
+            "key": "credit_card",
+            "count": "2",
+            "total_cents": "307900"
+          }
+        ],
+        "trend": [
+          {
+            "date": "2026-05-01",
+            "count": "1",
+            "total_cents": "75000"
+          },
+          {
+            "date": "2026-06-01",
+            "count": "1",
+            "total_cents": "75000"
+          },
+          {
+            "date": "2026-07-01",
+            "count": "1",
+            "total_cents": "75000"
+          },
+          {
+            "date": "2026-08-01",
+            "count": "1",
+            "total_cents": "75000"
+          },
+          {
+            "date": "2026-09-01",
+            "count": "2",
+            "total_cents": "133000"
+          },
+          {
+            "date": "2026-10-01",
+            "count": "2",
+            "total_cents": "324900"
+          },
+          {
+            "date": "2026-11-01",
+            "count": "1",
+            "total_cents": "75000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "same_looking_rows",
+      "question": "11 月 6 日相同描述的两笔校园食堂午餐合计多少？",
+      "filters": {
+        "from": "2026-11-06",
+        "to": "2026-11-06",
+        "search": "[PWDEMO-20261107-V1] 午餐 · 校园食堂"
+      },
+      "expected": {
+        "count": "2",
+        "total_cents": "2500",
+        "average_cents": "1250",
+        "granularity": "day",
+        "categories": [
+          {
+            "key": "Food",
+            "count": "2",
+            "total_cents": "2500"
+          }
+        ],
+        "methods": [
+          {
+            "key": "cash",
+            "count": "2",
+            "total_cents": "2500"
+          }
+        ],
+        "trend": [
+          {
+            "date": "2026-11-06",
+            "count": "2",
+            "total_cents": "2500"
+          }
+        ]
+      }
+    }
+  ],
+  "comparison": {
+    "octoberVsSeptember": {
+      "delta_cents": "193532",
+      "percent_hundredths": "8441"
+    }
+  },
+  "largest": {
+    "slot": 229,
+    "date": "2026-10-18",
+    "note": "[PWDEMO-20261107-V1] 购物 · 学习用笔记本电脑",
+    "amount": "2499.00",
+    "category": "Shopping"
+  },
+  "records": [
+    {
+      "slot": 1,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "7.00",
+      "category": "Food",
+      "expense_date": "2026-05-01",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:00:00+00:00"
+    },
+    {
+      "slot": 2,
+      "note": "[PWDEMO-20261107-V1] 房租 · 学生公寓",
+      "amount": "750.00",
+      "category": "Bills",
+      "expense_date": "2026-05-01",
+      "expense_time": "09:00",
+      "payment_method": "bank_transfer",
+      "created_at": "2026-11-07T00:00:01+00:00"
+    },
+    {
+      "slot": 3,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "2.40",
+      "category": "Transport",
+      "expense_date": "2026-05-02",
+      "expense_time": "08:40",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:00:02+00:00"
+    },
+    {
+      "slot": 4,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "9.50",
+      "category": "Food",
+      "expense_date": "2026-05-02",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:00:03+00:00"
+    },
+    {
+      "slot": 5,
+      "note": "[PWDEMO-20261107-V1] 水电费 · 当月账单",
+      "amount": "98.00",
+      "category": "Bills",
+      "expense_date": "2026-05-03",
+      "expense_time": "18:20",
+      "payment_method": "bank_transfer",
+      "created_at": "2026-11-07T00:00:04+00:00"
+    },
+    {
+      "slot": 6,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "12.50",
+      "category": "Food",
+      "expense_date": "2026-05-04",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:00:05+00:00"
+    },
+    {
+      "slot": 7,
+      "note": "[PWDEMO-20261107-V1] 宽带 · 月费",
+      "amount": "89.00",
+      "category": "Bills",
+      "expense_date": "2026-05-05",
+      "expense_time": "10:10",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:00:06+00:00"
+    },
+    {
+      "slot": 8,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "6.80",
+      "category": "Transport",
+      "expense_date": "2026-05-05",
+      "expense_time": "18:05",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:00:07+00:00"
+    },
+    {
+      "slot": 9,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "15.00",
+      "category": "Food",
+      "expense_date": "2026-05-06",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:00:08+00:00"
+    },
+    {
+      "slot": 10,
+      "note": "[PWDEMO-20261107-V1] 咖啡 · 校园咖啡店",
+      "amount": "8.00",
+      "category": "Food",
+      "expense_date": "2026-05-07",
+      "expense_time": "15:10",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:00:09+00:00"
+    },
+    {
+      "slot": 11,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "11.80",
+      "category": "Food",
+      "expense_date": "2026-05-08",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:00:10+00:00"
+    },
+    {
+      "slot": 12,
+      "note": "[PWDEMO-20261107-V1] 电影 · 周末场次",
+      "amount": "17.00",
+      "category": "Entertainment",
+      "expense_date": "2026-05-08",
+      "expense_time": "21:00",
+      "payment_method": "credit_card",
+      "created_at": "2026-11-07T00:00:11+00:00"
+    },
+    {
+      "slot": 13,
+      "note": "[PWDEMO-20261107-V1] Grab · 网约车",
+      "amount": "19.50",
+      "category": "Transport",
+      "expense_date": "2026-05-09",
+      "expense_time": "08:40",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:00:12+00:00"
+    },
+    {
+      "slot": 14,
+      "note": "[PWDEMO-20261107-V1] 杂货 · 超市食材",
+      "amount": "58.50",
+      "category": "Food",
+      "expense_date": "2026-05-09",
+      "expense_time": "20:00",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:00:13+00:00"
+    },
+    {
+      "slot": 15,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "18.50",
+      "category": "Food",
+      "expense_date": "2026-05-10",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:00:14+00:00"
+    },
+    {
+      "slot": 16,
+      "note": "[PWDEMO-20261107-V1] 购物 · 文具和书籍",
+      "amount": "39.90",
+      "category": "Shopping",
+      "expense_date": "2026-05-11",
+      "expense_time": "16:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:00:15+00:00"
+    },
+    {
+      "slot": 17,
+      "note": "[PWDEMO-20261107-V1] 手机 · 月费",
+      "amount": "35.00",
+      "category": "Bills",
+      "expense_date": "2026-05-12",
+      "expense_time": "08:00",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:00:16+00:00"
+    },
+    {
+      "slot": 18,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "9.00",
+      "category": "Food",
+      "expense_date": "2026-05-12",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:00:17+00:00"
+    },
+    {
+      "slot": 19,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "3.50",
+      "category": "Transport",
+      "expense_date": "2026-05-13",
+      "expense_time": "18:05",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:00:18+00:00"
+    },
+    {
+      "slot": 20,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "13.40",
+      "category": "Food",
+      "expense_date": "2026-05-14",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:00:19+00:00"
+    },
+    {
+      "slot": 21,
+      "note": "[PWDEMO-20261107-V1] 健康 · 药房用品",
+      "amount": "35.00",
+      "category": "Health",
+      "expense_date": "2026-05-15",
+      "expense_time": "11:30",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:00:20+00:00"
+    },
+    {
+      "slot": 22,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "16.00",
+      "category": "Food",
+      "expense_date": "2026-05-16",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:00:21+00:00"
+    },
+    {
+      "slot": 23,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "2.40",
+      "category": "Transport",
+      "expense_date": "2026-05-17",
+      "expense_time": "08:40",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:00:22+00:00"
+    },
+    {
+      "slot": 24,
+      "note": "[PWDEMO-20261107-V1] 咖啡 · 校园咖啡店",
+      "amount": "12.50",
+      "category": "Food",
+      "expense_date": "2026-05-17",
+      "expense_time": "15:10",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:00:23+00:00"
+    },
+    {
+      "slot": 25,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "10.50",
+      "category": "Food",
+      "expense_date": "2026-05-18",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:00:24+00:00"
+    },
+    {
+      "slot": 26,
+      "note": "[PWDEMO-20261107-V1] 游戏 · 数字内容",
+      "amount": "28.90",
+      "category": "Entertainment",
+      "expense_date": "2026-05-19",
+      "expense_time": "21:00",
+      "payment_method": "credit_card",
+      "created_at": "2026-11-07T00:00:25+00:00"
+    },
+    {
+      "slot": 27,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "22.00",
+      "category": "Food",
+      "expense_date": "2026-05-20",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:00:26+00:00"
+    },
+    {
+      "slot": 28,
+      "note": "[PWDEMO-20261107-V1] 其他 · 打印与复印",
+      "amount": "8.50",
+      "category": "Other",
+      "expense_date": "2026-05-20",
+      "expense_time": null,
+      "payment_method": "other",
+      "created_at": "2026-11-07T00:00:27+00:00"
+    },
+    {
+      "slot": 29,
+      "note": "[PWDEMO-20261107-V1] Grab · 网约车",
+      "amount": "12.20",
+      "category": "Transport",
+      "expense_date": "2026-05-21",
+      "expense_time": "18:05",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:00:28+00:00"
+    },
+    {
+      "slot": 30,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "14.50",
+      "category": "Food",
+      "expense_date": "2026-05-22",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:00:29+00:00"
+    },
+    {
+      "slot": 31,
+      "note": "[PWDEMO-20261107-V1] 杂货 · 超市食材",
+      "amount": "74.20",
+      "category": "Food",
+      "expense_date": "2026-05-23",
+      "expense_time": "20:00",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:00:30+00:00"
+    },
+    {
+      "slot": 32,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "8.00",
+      "category": "Food",
+      "expense_date": "2026-05-24",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:00:31+00:00"
+    },
+    {
+      "slot": 33,
+      "note": "[PWDEMO-20261107-V1] 购物 · 日用品",
+      "amount": "65.00",
+      "category": "Shopping",
+      "expense_date": "2026-05-24",
+      "expense_time": "16:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:00:32+00:00"
+    },
+    {
+      "slot": 34,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "8.00",
+      "category": "Transport",
+      "expense_date": "2026-05-25",
+      "expense_time": "08:40",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:00:33+00:00"
+    },
+    {
+      "slot": 35,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "17.50",
+      "category": "Food",
+      "expense_date": "2026-05-26",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:00:34+00:00"
+    },
+    {
+      "slot": 36,
+      "note": "[PWDEMO-20261107-V1] 聚会 · 活动门票",
+      "amount": "45.90",
+      "category": "Entertainment",
+      "expense_date": "2026-05-26",
+      "expense_time": "21:00",
+      "payment_method": "credit_card",
+      "created_at": "2026-11-07T00:00:35+00:00"
+    },
+    {
+      "slot": 37,
+      "note": "[PWDEMO-20261107-V1] 咖啡 · 校园咖啡店",
+      "amount": "16.50",
+      "category": "Food",
+      "expense_date": "2026-05-27",
+      "expense_time": "15:10",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:00:36+00:00"
+    },
+    {
+      "slot": 38,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "12.50",
+      "category": "Food",
+      "expense_date": "2026-05-28",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:00:37+00:00"
+    },
+    {
+      "slot": 39,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "2.40",
+      "category": "Transport",
+      "expense_date": "2026-05-29",
+      "expense_time": "18:05",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:00:38+00:00"
+    },
+    {
+      "slot": 40,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "7.35",
+      "category": "Food",
+      "expense_date": "2026-06-01",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:00:39+00:00"
+    },
+    {
+      "slot": 41,
+      "note": "[PWDEMO-20261107-V1] 房租 · 学生公寓",
+      "amount": "750.00",
+      "category": "Bills",
+      "expense_date": "2026-06-01",
+      "expense_time": "09:00",
+      "payment_method": "bank_transfer",
+      "created_at": "2026-11-07T00:00:40+00:00"
+    },
+    {
+      "slot": 42,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "2.40",
+      "category": "Transport",
+      "expense_date": "2026-06-02",
+      "expense_time": "08:40",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:00:41+00:00"
+    },
+    {
+      "slot": 43,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "9.85",
+      "category": "Food",
+      "expense_date": "2026-06-02",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:00:42+00:00"
+    },
+    {
+      "slot": 44,
+      "note": "[PWDEMO-20261107-V1] 水电费 · 当月账单",
+      "amount": "99.35",
+      "category": "Bills",
+      "expense_date": "2026-06-03",
+      "expense_time": "18:20",
+      "payment_method": "bank_transfer",
+      "created_at": "2026-11-07T00:00:43+00:00"
+    },
+    {
+      "slot": 45,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "12.85",
+      "category": "Food",
+      "expense_date": "2026-06-04",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:00:44+00:00"
+    },
+    {
+      "slot": 46,
+      "note": "[PWDEMO-20261107-V1] 宽带 · 月费",
+      "amount": "89.00",
+      "category": "Bills",
+      "expense_date": "2026-06-05",
+      "expense_time": "10:10",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:00:45+00:00"
+    },
+    {
+      "slot": 47,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "6.80",
+      "category": "Transport",
+      "expense_date": "2026-06-05",
+      "expense_time": "18:05",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:00:46+00:00"
+    },
+    {
+      "slot": 48,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "15.35",
+      "category": "Food",
+      "expense_date": "2026-06-06",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:00:47+00:00"
+    },
+    {
+      "slot": 49,
+      "note": "[PWDEMO-20261107-V1] 咖啡 · 校园咖啡店",
+      "amount": "8.20",
+      "category": "Food",
+      "expense_date": "2026-06-07",
+      "expense_time": "15:10",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:00:48+00:00"
+    },
+    {
+      "slot": 50,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "12.15",
+      "category": "Food",
+      "expense_date": "2026-06-08",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:00:49+00:00"
+    },
+    {
+      "slot": 51,
+      "note": "[PWDEMO-20261107-V1] 电影 · 周末场次",
+      "amount": "17.45",
+      "category": "Entertainment",
+      "expense_date": "2026-06-08",
+      "expense_time": "21:00",
+      "payment_method": "credit_card",
+      "created_at": "2026-11-07T00:00:50+00:00"
+    },
+    {
+      "slot": 52,
+      "note": "[PWDEMO-20261107-V1] Grab · 网约车",
+      "amount": "20.50",
+      "category": "Transport",
+      "expense_date": "2026-06-09",
+      "expense_time": "08:40",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:00:51+00:00"
+    },
+    {
+      "slot": 53,
+      "note": "[PWDEMO-20261107-V1] 杂货 · 超市食材",
+      "amount": "59.81",
+      "category": "Food",
+      "expense_date": "2026-06-09",
+      "expense_time": "20:00",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:00:52+00:00"
+    },
+    {
+      "slot": 54,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "18.85",
+      "category": "Food",
+      "expense_date": "2026-06-10",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:00:53+00:00"
+    },
+    {
+      "slot": 55,
+      "note": "[PWDEMO-20261107-V1] 购物 · 文具和书籍",
+      "amount": "41.00",
+      "category": "Shopping",
+      "expense_date": "2026-06-11",
+      "expense_time": "16:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:00:54+00:00"
+    },
+    {
+      "slot": 56,
+      "note": "[PWDEMO-20261107-V1] 手机 · 月费",
+      "amount": "35.00",
+      "category": "Bills",
+      "expense_date": "2026-06-12",
+      "expense_time": "08:00",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:00:55+00:00"
+    },
+    {
+      "slot": 57,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "9.35",
+      "category": "Food",
+      "expense_date": "2026-06-12",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:00:56+00:00"
+    },
+    {
+      "slot": 58,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "3.50",
+      "category": "Transport",
+      "expense_date": "2026-06-13",
+      "expense_time": "18:05",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:00:57+00:00"
+    },
+    {
+      "slot": 59,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "13.75",
+      "category": "Food",
+      "expense_date": "2026-06-14",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:00:58+00:00"
+    },
+    {
+      "slot": 60,
+      "note": "[PWDEMO-20261107-V1] 健康 · 药房用品",
+      "amount": "35.80",
+      "category": "Health",
+      "expense_date": "2026-06-15",
+      "expense_time": "11:30",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:00:59+00:00"
+    },
+    {
+      "slot": 61,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "16.35",
+      "category": "Food",
+      "expense_date": "2026-06-16",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:01:00+00:00"
+    },
+    {
+      "slot": 62,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "2.40",
+      "category": "Transport",
+      "expense_date": "2026-06-17",
+      "expense_time": "08:40",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:01:01+00:00"
+    },
+    {
+      "slot": 63,
+      "note": "[PWDEMO-20261107-V1] 咖啡 · 校园咖啡店",
+      "amount": "12.70",
+      "category": "Food",
+      "expense_date": "2026-06-17",
+      "expense_time": "15:10",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:01:02+00:00"
+    },
+    {
+      "slot": 64,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "10.85",
+      "category": "Food",
+      "expense_date": "2026-06-18",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:01:03+00:00"
+    },
+    {
+      "slot": 65,
+      "note": "[PWDEMO-20261107-V1] 游戏 · 数字内容",
+      "amount": "29.35",
+      "category": "Entertainment",
+      "expense_date": "2026-06-19",
+      "expense_time": "21:00",
+      "payment_method": "credit_card",
+      "created_at": "2026-11-07T00:01:04+00:00"
+    },
+    {
+      "slot": 66,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "22.35",
+      "category": "Food",
+      "expense_date": "2026-06-20",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:01:05+00:00"
+    },
+    {
+      "slot": 67,
+      "note": "[PWDEMO-20261107-V1] 其他 · 打印与复印",
+      "amount": "8.65",
+      "category": "Other",
+      "expense_date": "2026-06-20",
+      "expense_time": null,
+      "payment_method": null,
+      "created_at": "2026-11-07T00:01:06+00:00"
+    },
+    {
+      "slot": 68,
+      "note": "[PWDEMO-20261107-V1] Grab · 网约车",
+      "amount": "12.20",
+      "category": "Transport",
+      "expense_date": "2026-06-21",
+      "expense_time": "18:05",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:01:07+00:00"
+    },
+    {
+      "slot": 69,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "14.85",
+      "category": "Food",
+      "expense_date": "2026-06-22",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:01:08+00:00"
+    },
+    {
+      "slot": 70,
+      "note": "[PWDEMO-20261107-V1] 杂货 · 超市食材",
+      "amount": "75.51",
+      "category": "Food",
+      "expense_date": "2026-06-23",
+      "expense_time": "20:00",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:01:09+00:00"
+    },
+    {
+      "slot": 71,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "8.35",
+      "category": "Food",
+      "expense_date": "2026-06-24",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:01:10+00:00"
+    },
+    {
+      "slot": 72,
+      "note": "[PWDEMO-20261107-V1] 购物 · 日用品",
+      "amount": "66.10",
+      "category": "Shopping",
+      "expense_date": "2026-06-24",
+      "expense_time": "16:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:01:11+00:00"
+    },
+    {
+      "slot": 73,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "8.00",
+      "category": "Transport",
+      "expense_date": "2026-06-25",
+      "expense_time": "08:40",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:01:12+00:00"
+    },
+    {
+      "slot": 74,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "17.85",
+      "category": "Food",
+      "expense_date": "2026-06-26",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:01:13+00:00"
+    },
+    {
+      "slot": 75,
+      "note": "[PWDEMO-20261107-V1] 聚会 · 活动门票",
+      "amount": "46.35",
+      "category": "Entertainment",
+      "expense_date": "2026-06-26",
+      "expense_time": "21:00",
+      "payment_method": "credit_card",
+      "created_at": "2026-11-07T00:01:14+00:00"
+    },
+    {
+      "slot": 76,
+      "note": "[PWDEMO-20261107-V1] 咖啡 · 校园咖啡店",
+      "amount": "16.70",
+      "category": "Food",
+      "expense_date": "2026-06-27",
+      "expense_time": "15:10",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:01:15+00:00"
+    },
+    {
+      "slot": 77,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "12.85",
+      "category": "Food",
+      "expense_date": "2026-06-28",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:01:16+00:00"
+    },
+    {
+      "slot": 78,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "2.40",
+      "category": "Transport",
+      "expense_date": "2026-06-29",
+      "expense_time": "18:05",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:01:17+00:00"
+    },
+    {
+      "slot": 79,
+      "note": "[PWDEMO-20261107-V1] 边界核对 · 六月底",
+      "amount": "9.99",
+      "category": "Other",
+      "expense_date": "2026-06-30",
+      "expense_time": "23:59",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:01:18+00:00"
+    },
+    {
+      "slot": 80,
+      "note": "[PWDEMO-20261107-V1] 边界核对 · 七月初",
+      "amount": "10.01",
+      "category": "Other",
+      "expense_date": "2026-07-01",
+      "expense_time": "00:00",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:01:19+00:00"
+    },
+    {
+      "slot": 81,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "7.70",
+      "category": "Food",
+      "expense_date": "2026-07-01",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:01:20+00:00"
+    },
+    {
+      "slot": 82,
+      "note": "[PWDEMO-20261107-V1] 房租 · 学生公寓",
+      "amount": "750.00",
+      "category": "Bills",
+      "expense_date": "2026-07-01",
+      "expense_time": "09:00",
+      "payment_method": "bank_transfer",
+      "created_at": "2026-11-07T00:01:21+00:00"
+    },
+    {
+      "slot": 83,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "2.40",
+      "category": "Transport",
+      "expense_date": "2026-07-02",
+      "expense_time": "08:40",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:01:22+00:00"
+    },
+    {
+      "slot": 84,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "10.20",
+      "category": "Food",
+      "expense_date": "2026-07-02",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:01:23+00:00"
+    },
+    {
+      "slot": 85,
+      "note": "[PWDEMO-20261107-V1] 水电费 · 当月账单",
+      "amount": "100.70",
+      "category": "Bills",
+      "expense_date": "2026-07-03",
+      "expense_time": "18:20",
+      "payment_method": "bank_transfer",
+      "created_at": "2026-11-07T00:01:24+00:00"
+    },
+    {
+      "slot": 86,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "13.20",
+      "category": "Food",
+      "expense_date": "2026-07-04",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:01:25+00:00"
+    },
+    {
+      "slot": 87,
+      "note": "[PWDEMO-20261107-V1] 宽带 · 月费",
+      "amount": "89.00",
+      "category": "Bills",
+      "expense_date": "2026-07-05",
+      "expense_time": "10:10",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:01:26+00:00"
+    },
+    {
+      "slot": 88,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "6.80",
+      "category": "Transport",
+      "expense_date": "2026-07-05",
+      "expense_time": "18:05",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:01:27+00:00"
+    },
+    {
+      "slot": 89,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "15.70",
+      "category": "Food",
+      "expense_date": "2026-07-06",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:01:28+00:00"
+    },
+    {
+      "slot": 90,
+      "note": "[PWDEMO-20261107-V1] 咖啡 · 校园咖啡店",
+      "amount": "8.40",
+      "category": "Food",
+      "expense_date": "2026-07-07",
+      "expense_time": "15:10",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:01:29+00:00"
+    },
+    {
+      "slot": 91,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "12.50",
+      "category": "Food",
+      "expense_date": "2026-07-08",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:01:30+00:00"
+    },
+    {
+      "slot": 92,
+      "note": "[PWDEMO-20261107-V1] 电影 · 周末场次",
+      "amount": "17.90",
+      "category": "Entertainment",
+      "expense_date": "2026-07-08",
+      "expense_time": "21:00",
+      "payment_method": "credit_card",
+      "created_at": "2026-11-07T00:01:31+00:00"
+    },
+    {
+      "slot": 93,
+      "note": "[PWDEMO-20261107-V1] Grab · 网约车",
+      "amount": "21.50",
+      "category": "Transport",
+      "expense_date": "2026-07-09",
+      "expense_time": "08:40",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:01:32+00:00"
+    },
+    {
+      "slot": 94,
+      "note": "[PWDEMO-20261107-V1] 杂货 · 超市食材",
+      "amount": "61.12",
+      "category": "Food",
+      "expense_date": "2026-07-09",
+      "expense_time": "20:00",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:01:33+00:00"
+    },
+    {
+      "slot": 95,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "19.20",
+      "category": "Food",
+      "expense_date": "2026-07-10",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:01:34+00:00"
+    },
+    {
+      "slot": 96,
+      "note": "[PWDEMO-20261107-V1] 购物 · 文具和书籍",
+      "amount": "42.10",
+      "category": "Shopping",
+      "expense_date": "2026-07-11",
+      "expense_time": "16:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:01:35+00:00"
+    },
+    {
+      "slot": 97,
+      "note": "[PWDEMO-20261107-V1] 手机 · 月费",
+      "amount": "35.00",
+      "category": "Bills",
+      "expense_date": "2026-07-12",
+      "expense_time": "08:00",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:01:36+00:00"
+    },
+    {
+      "slot": 98,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "9.70",
+      "category": "Food",
+      "expense_date": "2026-07-12",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:01:37+00:00"
+    },
+    {
+      "slot": 99,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "3.50",
+      "category": "Transport",
+      "expense_date": "2026-07-13",
+      "expense_time": "18:05",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:01:38+00:00"
+    },
+    {
+      "slot": 100,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "14.10",
+      "category": "Food",
+      "expense_date": "2026-07-14",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:01:39+00:00"
+    },
+    {
+      "slot": 101,
+      "note": "[PWDEMO-20261107-V1] 健康 · 药房用品",
+      "amount": "36.60",
+      "category": "Health",
+      "expense_date": "2026-07-15",
+      "expense_time": "11:30",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:01:40+00:00"
+    },
+    {
+      "slot": 102,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "16.70",
+      "category": "Food",
+      "expense_date": "2026-07-16",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:01:41+00:00"
+    },
+    {
+      "slot": 103,
+      "note": "[PWDEMO-20261107-V1] 城际旅行 · 吉隆坡往返槟城车票",
+      "amount": "260.00",
+      "category": "Transport",
+      "expense_date": "2026-07-17",
+      "expense_time": "07:15",
+      "payment_method": "credit_card",
+      "created_at": "2026-11-07T00:01:42+00:00"
+    },
+    {
+      "slot": 104,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "2.40",
+      "category": "Transport",
+      "expense_date": "2026-07-17",
+      "expense_time": "08:40",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:01:43+00:00"
+    },
+    {
+      "slot": 105,
+      "note": "[PWDEMO-20261107-V1] 咖啡 · 校园咖啡店",
+      "amount": "12.90",
+      "category": "Food",
+      "expense_date": "2026-07-17",
+      "expense_time": "15:10",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:01:44+00:00"
+    },
+    {
+      "slot": 106,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "11.20",
+      "category": "Food",
+      "expense_date": "2026-07-18",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:01:45+00:00"
+    },
+    {
+      "slot": 107,
+      "note": "[PWDEMO-20261107-V1] 游戏 · 数字内容",
+      "amount": "29.80",
+      "category": "Entertainment",
+      "expense_date": "2026-07-19",
+      "expense_time": "21:00",
+      "payment_method": "credit_card",
+      "created_at": "2026-11-07T00:01:46+00:00"
+    },
+    {
+      "slot": 108,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "22.70",
+      "category": "Food",
+      "expense_date": "2026-07-20",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:01:47+00:00"
+    },
+    {
+      "slot": 109,
+      "note": "[PWDEMO-20261107-V1] 其他 · 打印与复印",
+      "amount": "8.80",
+      "category": "Other",
+      "expense_date": "2026-07-20",
+      "expense_time": null,
+      "payment_method": "other",
+      "created_at": "2026-11-07T00:01:48+00:00"
+    },
+    {
+      "slot": 110,
+      "note": "[PWDEMO-20261107-V1] Grab · 网约车",
+      "amount": "12.20",
+      "category": "Transport",
+      "expense_date": "2026-07-21",
+      "expense_time": "18:05",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:01:49+00:00"
+    },
+    {
+      "slot": 111,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "15.20",
+      "category": "Food",
+      "expense_date": "2026-07-22",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:01:50+00:00"
+    },
+    {
+      "slot": 112,
+      "note": "[PWDEMO-20261107-V1] 杂货 · 超市食材",
+      "amount": "76.82",
+      "category": "Food",
+      "expense_date": "2026-07-23",
+      "expense_time": "20:00",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:01:51+00:00"
+    },
+    {
+      "slot": 113,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "8.70",
+      "category": "Food",
+      "expense_date": "2026-07-24",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:01:52+00:00"
+    },
+    {
+      "slot": 114,
+      "note": "[PWDEMO-20261107-V1] 购物 · 日用品",
+      "amount": "67.20",
+      "category": "Shopping",
+      "expense_date": "2026-07-24",
+      "expense_time": "16:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:01:53+00:00"
+    },
+    {
+      "slot": 115,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "8.00",
+      "category": "Transport",
+      "expense_date": "2026-07-25",
+      "expense_time": "08:40",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:01:54+00:00"
+    },
+    {
+      "slot": 116,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "18.20",
+      "category": "Food",
+      "expense_date": "2026-07-26",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:01:55+00:00"
+    },
+    {
+      "slot": 117,
+      "note": "[PWDEMO-20261107-V1] 聚会 · 活动门票",
+      "amount": "46.80",
+      "category": "Entertainment",
+      "expense_date": "2026-07-26",
+      "expense_time": "21:00",
+      "payment_method": "credit_card",
+      "created_at": "2026-11-07T00:01:56+00:00"
+    },
+    {
+      "slot": 118,
+      "note": "[PWDEMO-20261107-V1] 咖啡 · 校园咖啡店",
+      "amount": "16.90",
+      "category": "Food",
+      "expense_date": "2026-07-27",
+      "expense_time": "15:10",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:01:57+00:00"
+    },
+    {
+      "slot": 119,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "13.20",
+      "category": "Food",
+      "expense_date": "2026-07-28",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:01:58+00:00"
+    },
+    {
+      "slot": 120,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "2.40",
+      "category": "Transport",
+      "expense_date": "2026-07-29",
+      "expense_time": "18:05",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:01:59+00:00"
+    },
+    {
+      "slot": 121,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "8.05",
+      "category": "Food",
+      "expense_date": "2026-08-01",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:02:00+00:00"
+    },
+    {
+      "slot": 122,
+      "note": "[PWDEMO-20261107-V1] 房租 · 学生公寓",
+      "amount": "750.00",
+      "category": "Bills",
+      "expense_date": "2026-08-01",
+      "expense_time": "09:00",
+      "payment_method": "bank_transfer",
+      "created_at": "2026-11-07T00:02:01+00:00"
+    },
+    {
+      "slot": 123,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "2.40",
+      "category": "Transport",
+      "expense_date": "2026-08-02",
+      "expense_time": "08:40",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:02:02+00:00"
+    },
+    {
+      "slot": 124,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "10.55",
+      "category": "Food",
+      "expense_date": "2026-08-02",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:02:03+00:00"
+    },
+    {
+      "slot": 125,
+      "note": "[PWDEMO-20261107-V1] 水电费 · 当月账单",
+      "amount": "102.05",
+      "category": "Bills",
+      "expense_date": "2026-08-03",
+      "expense_time": "18:20",
+      "payment_method": "bank_transfer",
+      "created_at": "2026-11-07T00:02:04+00:00"
+    },
+    {
+      "slot": 126,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "13.55",
+      "category": "Food",
+      "expense_date": "2026-08-04",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:02:05+00:00"
+    },
+    {
+      "slot": 127,
+      "note": "[PWDEMO-20261107-V1] 宽带 · 月费",
+      "amount": "89.00",
+      "category": "Bills",
+      "expense_date": "2026-08-05",
+      "expense_time": "10:10",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:02:06+00:00"
+    },
+    {
+      "slot": 128,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "6.80",
+      "category": "Transport",
+      "expense_date": "2026-08-05",
+      "expense_time": "18:05",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:02:07+00:00"
+    },
+    {
+      "slot": 129,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "16.05",
+      "category": "Food",
+      "expense_date": "2026-08-06",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:02:08+00:00"
+    },
+    {
+      "slot": 130,
+      "note": "[PWDEMO-20261107-V1] 咖啡 · 校园咖啡店",
+      "amount": "8.60",
+      "category": "Food",
+      "expense_date": "2026-08-07",
+      "expense_time": "15:10",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:02:09+00:00"
+    },
+    {
+      "slot": 131,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "12.85",
+      "category": "Food",
+      "expense_date": "2026-08-08",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:02:10+00:00"
+    },
+    {
+      "slot": 132,
+      "note": "[PWDEMO-20261107-V1] 电影 · 周末场次",
+      "amount": "18.35",
+      "category": "Entertainment",
+      "expense_date": "2026-08-08",
+      "expense_time": "21:00",
+      "payment_method": "credit_card",
+      "created_at": "2026-11-07T00:02:11+00:00"
+    },
+    {
+      "slot": 133,
+      "note": "[PWDEMO-20261107-V1] Grab · 网约车",
+      "amount": "22.50",
+      "category": "Transport",
+      "expense_date": "2026-08-09",
+      "expense_time": "08:40",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:02:12+00:00"
+    },
+    {
+      "slot": 134,
+      "note": "[PWDEMO-20261107-V1] 杂货 · 超市食材",
+      "amount": "62.43",
+      "category": "Food",
+      "expense_date": "2026-08-09",
+      "expense_time": "20:00",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:02:13+00:00"
+    },
+    {
+      "slot": 135,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "19.55",
+      "category": "Food",
+      "expense_date": "2026-08-10",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:02:14+00:00"
+    },
+    {
+      "slot": 136,
+      "note": "[PWDEMO-20261107-V1] 购物 · 文具和书籍",
+      "amount": "43.20",
+      "category": "Shopping",
+      "expense_date": "2026-08-11",
+      "expense_time": "16:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:02:15+00:00"
+    },
+    {
+      "slot": 137,
+      "note": "[PWDEMO-20261107-V1] 手机 · 月费",
+      "amount": "35.00",
+      "category": "Bills",
+      "expense_date": "2026-08-12",
+      "expense_time": "08:00",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:02:16+00:00"
+    },
+    {
+      "slot": 138,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "10.05",
+      "category": "Food",
+      "expense_date": "2026-08-12",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:02:17+00:00"
+    },
+    {
+      "slot": 139,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "3.50",
+      "category": "Transport",
+      "expense_date": "2026-08-13",
+      "expense_time": "18:05",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:02:18+00:00"
+    },
+    {
+      "slot": 140,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "14.45",
+      "category": "Food",
+      "expense_date": "2026-08-14",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:02:19+00:00"
+    },
+    {
+      "slot": 141,
+      "note": "[PWDEMO-20261107-V1] 健康 · 药房用品",
+      "amount": "37.40",
+      "category": "Health",
+      "expense_date": "2026-08-15",
+      "expense_time": "11:30",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:02:20+00:00"
+    },
+    {
+      "slot": 142,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "17.05",
+      "category": "Food",
+      "expense_date": "2026-08-16",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:02:21+00:00"
+    },
+    {
+      "slot": 143,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "2.40",
+      "category": "Transport",
+      "expense_date": "2026-08-17",
+      "expense_time": "08:40",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:02:22+00:00"
+    },
+    {
+      "slot": 144,
+      "note": "[PWDEMO-20261107-V1] 咖啡 · 校园咖啡店",
+      "amount": "13.10",
+      "category": "Food",
+      "expense_date": "2026-08-17",
+      "expense_time": "15:10",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:02:23+00:00"
+    },
+    {
+      "slot": 145,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "11.55",
+      "category": "Food",
+      "expense_date": "2026-08-18",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:02:24+00:00"
+    },
+    {
+      "slot": 146,
+      "note": "[PWDEMO-20261107-V1] 游戏 · 数字内容",
+      "amount": "30.25",
+      "category": "Entertainment",
+      "expense_date": "2026-08-19",
+      "expense_time": "21:00",
+      "payment_method": "credit_card",
+      "created_at": "2026-11-07T00:02:25+00:00"
+    },
+    {
+      "slot": 147,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "23.05",
+      "category": "Food",
+      "expense_date": "2026-08-20",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:02:26+00:00"
+    },
+    {
+      "slot": 148,
+      "note": "[PWDEMO-20261107-V1] 其他 · 打印与复印",
+      "amount": "8.95",
+      "category": "Other",
+      "expense_date": "2026-08-20",
+      "expense_time": null,
+      "payment_method": null,
+      "created_at": "2026-11-07T00:02:27+00:00"
+    },
+    {
+      "slot": 149,
+      "note": "[PWDEMO-20261107-V1] Grab · 网约车",
+      "amount": "12.20",
+      "category": "Transport",
+      "expense_date": "2026-08-21",
+      "expense_time": "18:05",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:02:28+00:00"
+    },
+    {
+      "slot": 150,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "15.55",
+      "category": "Food",
+      "expense_date": "2026-08-22",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:02:29+00:00"
+    },
+    {
+      "slot": 151,
+      "note": "[PWDEMO-20261107-V1] 杂货 · 超市食材",
+      "amount": "78.13",
+      "category": "Food",
+      "expense_date": "2026-08-23",
+      "expense_time": "20:00",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:02:30+00:00"
+    },
+    {
+      "slot": 152,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "9.05",
+      "category": "Food",
+      "expense_date": "2026-08-24",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:02:31+00:00"
+    },
+    {
+      "slot": 153,
+      "note": "[PWDEMO-20261107-V1] 购物 · 日用品",
+      "amount": "68.30",
+      "category": "Shopping",
+      "expense_date": "2026-08-24",
+      "expense_time": "16:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:02:32+00:00"
+    },
+    {
+      "slot": 154,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "8.00",
+      "category": "Transport",
+      "expense_date": "2026-08-25",
+      "expense_time": "08:40",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:02:33+00:00"
+    },
+    {
+      "slot": 155,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "18.55",
+      "category": "Food",
+      "expense_date": "2026-08-26",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:02:34+00:00"
+    },
+    {
+      "slot": 156,
+      "note": "[PWDEMO-20261107-V1] 聚会 · 活动门票",
+      "amount": "47.25",
+      "category": "Entertainment",
+      "expense_date": "2026-08-26",
+      "expense_time": "21:00",
+      "payment_method": "credit_card",
+      "created_at": "2026-11-07T00:02:35+00:00"
+    },
+    {
+      "slot": 157,
+      "note": "[PWDEMO-20261107-V1] 咖啡 · 校园咖啡店",
+      "amount": "17.10",
+      "category": "Food",
+      "expense_date": "2026-08-27",
+      "expense_time": "15:10",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:02:36+00:00"
+    },
+    {
+      "slot": 158,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "13.55",
+      "category": "Food",
+      "expense_date": "2026-08-28",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:02:37+00:00"
+    },
+    {
+      "slot": 159,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "2.40",
+      "category": "Transport",
+      "expense_date": "2026-08-29",
+      "expense_time": "18:05",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:02:38+00:00"
+    },
+    {
+      "slot": 160,
+      "note": "[PWDEMO-20261107-V1] 精度核对 · A",
+      "amount": "0.10",
+      "category": "Other",
+      "expense_date": "2026-08-31",
+      "expense_time": "12:00",
+      "payment_method": "other",
+      "created_at": "2026-11-07T00:02:39+00:00"
+    },
+    {
+      "slot": 161,
+      "note": "[PWDEMO-20261107-V1] 精度核对 · B",
+      "amount": "0.20",
+      "category": "Other",
+      "expense_date": "2026-08-31",
+      "expense_time": "12:00",
+      "payment_method": "other",
+      "created_at": "2026-11-07T00:02:40+00:00"
+    },
+    {
+      "slot": 162,
+      "note": "[PWDEMO-20261107-V1] 精度核对 · C",
+      "amount": "0.29",
+      "category": "Other",
+      "expense_date": "2026-08-31",
+      "expense_time": "12:00",
+      "payment_method": "other",
+      "created_at": "2026-11-07T00:02:41+00:00"
+    },
+    {
+      "slot": 163,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "8.40",
+      "category": "Food",
+      "expense_date": "2026-09-01",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:02:42+00:00"
+    },
+    {
+      "slot": 164,
+      "note": "[PWDEMO-20261107-V1] 房租 · 学生公寓",
+      "amount": "750.00",
+      "category": "Bills",
+      "expense_date": "2026-09-01",
+      "expense_time": "09:00",
+      "payment_method": "bank_transfer",
+      "created_at": "2026-11-07T00:02:43+00:00"
+    },
+    {
+      "slot": 165,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "2.40",
+      "category": "Transport",
+      "expense_date": "2026-09-02",
+      "expense_time": "08:40",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:02:44+00:00"
+    },
+    {
+      "slot": 166,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "10.90",
+      "category": "Food",
+      "expense_date": "2026-09-02",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:02:45+00:00"
+    },
+    {
+      "slot": 167,
+      "note": "[PWDEMO-20261107-V1] 水电费 · 当月账单",
+      "amount": "103.40",
+      "category": "Bills",
+      "expense_date": "2026-09-03",
+      "expense_time": "18:20",
+      "payment_method": "bank_transfer",
+      "created_at": "2026-11-07T00:02:46+00:00"
+    },
+    {
+      "slot": 168,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "13.90",
+      "category": "Food",
+      "expense_date": "2026-09-04",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:02:47+00:00"
+    },
+    {
+      "slot": 169,
+      "note": "[PWDEMO-20261107-V1] 宽带 · 月费",
+      "amount": "89.00",
+      "category": "Bills",
+      "expense_date": "2026-09-05",
+      "expense_time": "10:10",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:02:48+00:00"
+    },
+    {
+      "slot": 170,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "6.80",
+      "category": "Transport",
+      "expense_date": "2026-09-05",
+      "expense_time": "18:05",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:02:49+00:00"
+    },
+    {
+      "slot": 171,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "16.40",
+      "category": "Food",
+      "expense_date": "2026-09-06",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:02:50+00:00"
+    },
+    {
+      "slot": 172,
+      "note": "[PWDEMO-20261107-V1] 咖啡 · 校园咖啡店",
+      "amount": "8.80",
+      "category": "Food",
+      "expense_date": "2026-09-07",
+      "expense_time": "15:10",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:02:51+00:00"
+    },
+    {
+      "slot": 173,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "13.20",
+      "category": "Food",
+      "expense_date": "2026-09-08",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:02:52+00:00"
+    },
+    {
+      "slot": 174,
+      "note": "[PWDEMO-20261107-V1] 电影 · 周末场次",
+      "amount": "18.80",
+      "category": "Entertainment",
+      "expense_date": "2026-09-08",
+      "expense_time": "21:00",
+      "payment_method": "credit_card",
+      "created_at": "2026-11-07T00:02:53+00:00"
+    },
+    {
+      "slot": 175,
+      "note": "[PWDEMO-20261107-V1] Grab · 网约车",
+      "amount": "23.50",
+      "category": "Transport",
+      "expense_date": "2026-09-09",
+      "expense_time": "08:40",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:02:54+00:00"
+    },
+    {
+      "slot": 176,
+      "note": "[PWDEMO-20261107-V1] 杂货 · 超市食材",
+      "amount": "63.74",
+      "category": "Food",
+      "expense_date": "2026-09-09",
+      "expense_time": "20:00",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:02:55+00:00"
+    },
+    {
+      "slot": 177,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "19.90",
+      "category": "Food",
+      "expense_date": "2026-09-10",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:02:56+00:00"
+    },
+    {
+      "slot": 178,
+      "note": "[PWDEMO-20261107-V1] 购物 · 文具和书籍",
+      "amount": "44.30",
+      "category": "Shopping",
+      "expense_date": "2026-09-11",
+      "expense_time": "16:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:02:57+00:00"
+    },
+    {
+      "slot": 179,
+      "note": "[PWDEMO-20261107-V1] 手机 · 月费",
+      "amount": "35.00",
+      "category": "Bills",
+      "expense_date": "2026-09-12",
+      "expense_time": "08:00",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:02:58+00:00"
+    },
+    {
+      "slot": 180,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "10.40",
+      "category": "Food",
+      "expense_date": "2026-09-12",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:02:59+00:00"
+    },
+    {
+      "slot": 181,
+      "note": "[PWDEMO-20261107-V1] 补录 · 未记录付款方式和时间",
+      "amount": "14.75",
+      "category": "Food",
+      "expense_date": "2026-09-12",
+      "expense_time": null,
+      "payment_method": null,
+      "created_at": "2026-11-07T00:03:00+00:00"
+    },
+    {
+      "slot": 182,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "3.50",
+      "category": "Transport",
+      "expense_date": "2026-09-13",
+      "expense_time": "18:05",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:03:01+00:00"
+    },
+    {
+      "slot": 183,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "14.80",
+      "category": "Food",
+      "expense_date": "2026-09-14",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:03:02+00:00"
+    },
+    {
+      "slot": 184,
+      "note": "[PWDEMO-20261107-V1] 健康 · 药房用品",
+      "amount": "38.20",
+      "category": "Health",
+      "expense_date": "2026-09-15",
+      "expense_time": "11:30",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:03:03+00:00"
+    },
+    {
+      "slot": 185,
+      "note": "[PWDEMO-20261107-V1] 健康 · 一次性门诊检查",
+      "amount": "580.00",
+      "category": "Health",
+      "expense_date": "2026-09-16",
+      "expense_time": "10:00",
+      "payment_method": "credit_card",
+      "created_at": "2026-11-07T00:03:04+00:00"
+    },
+    {
+      "slot": 186,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "17.40",
+      "category": "Food",
+      "expense_date": "2026-09-16",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:03:05+00:00"
+    },
+    {
+      "slot": 187,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "2.40",
+      "category": "Transport",
+      "expense_date": "2026-09-17",
+      "expense_time": "08:40",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:03:06+00:00"
+    },
+    {
+      "slot": 188,
+      "note": "[PWDEMO-20261107-V1] 咖啡 · 校园咖啡店",
+      "amount": "13.30",
+      "category": "Food",
+      "expense_date": "2026-09-17",
+      "expense_time": "15:10",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:03:07+00:00"
+    },
+    {
+      "slot": 189,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "11.90",
+      "category": "Food",
+      "expense_date": "2026-09-18",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:03:08+00:00"
+    },
+    {
+      "slot": 190,
+      "note": "[PWDEMO-20261107-V1] 游戏 · 数字内容",
+      "amount": "30.70",
+      "category": "Entertainment",
+      "expense_date": "2026-09-19",
+      "expense_time": "21:00",
+      "payment_method": "credit_card",
+      "created_at": "2026-11-07T00:03:09+00:00"
+    },
+    {
+      "slot": 191,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "23.40",
+      "category": "Food",
+      "expense_date": "2026-09-20",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:03:10+00:00"
+    },
+    {
+      "slot": 192,
+      "note": "[PWDEMO-20261107-V1] 其他 · 打印与复印",
+      "amount": "9.10",
+      "category": "Other",
+      "expense_date": "2026-09-20",
+      "expense_time": null,
+      "payment_method": "other",
+      "created_at": "2026-11-07T00:03:11+00:00"
+    },
+    {
+      "slot": 193,
+      "note": "[PWDEMO-20261107-V1] Grab · 网约车",
+      "amount": "12.20",
+      "category": "Transport",
+      "expense_date": "2026-09-21",
+      "expense_time": "18:05",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:03:12+00:00"
+    },
+    {
+      "slot": 194,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "15.90",
+      "category": "Food",
+      "expense_date": "2026-09-22",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:03:13+00:00"
+    },
+    {
+      "slot": 195,
+      "note": "[PWDEMO-20261107-V1] 杂货 · 超市食材",
+      "amount": "79.44",
+      "category": "Food",
+      "expense_date": "2026-09-23",
+      "expense_time": "20:00",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:03:14+00:00"
+    },
+    {
+      "slot": 196,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "9.40",
+      "category": "Food",
+      "expense_date": "2026-09-24",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:03:15+00:00"
+    },
+    {
+      "slot": 197,
+      "note": "[PWDEMO-20261107-V1] 购物 · 日用品",
+      "amount": "69.40",
+      "category": "Shopping",
+      "expense_date": "2026-09-24",
+      "expense_time": "16:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:03:16+00:00"
+    },
+    {
+      "slot": 198,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "8.00",
+      "category": "Transport",
+      "expense_date": "2026-09-25",
+      "expense_time": "08:40",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:03:17+00:00"
+    },
+    {
+      "slot": 199,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "18.90",
+      "category": "Food",
+      "expense_date": "2026-09-26",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:03:18+00:00"
+    },
+    {
+      "slot": 200,
+      "note": "[PWDEMO-20261107-V1] 聚会 · 活动门票",
+      "amount": "47.70",
+      "category": "Entertainment",
+      "expense_date": "2026-09-26",
+      "expense_time": "21:00",
+      "payment_method": "credit_card",
+      "created_at": "2026-11-07T00:03:19+00:00"
+    },
+    {
+      "slot": 201,
+      "note": "[PWDEMO-20261107-V1] 咖啡 · 校园咖啡店",
+      "amount": "17.30",
+      "category": "Food",
+      "expense_date": "2026-09-27",
+      "expense_time": "15:10",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:03:20+00:00"
+    },
+    {
+      "slot": 202,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "13.90",
+      "category": "Food",
+      "expense_date": "2026-09-28",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:03:21+00:00"
+    },
+    {
+      "slot": 203,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "2.40",
+      "category": "Transport",
+      "expense_date": "2026-09-29",
+      "expense_time": "18:05",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:03:22+00:00"
+    },
+    {
+      "slot": 204,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "8.75",
+      "category": "Food",
+      "expense_date": "2026-10-01",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:03:23+00:00"
+    },
+    {
+      "slot": 205,
+      "note": "[PWDEMO-20261107-V1] 房租 · 学生公寓",
+      "amount": "750.00",
+      "category": "Bills",
+      "expense_date": "2026-10-01",
+      "expense_time": "09:00",
+      "payment_method": "bank_transfer",
+      "created_at": "2026-11-07T00:03:24+00:00"
+    },
+    {
+      "slot": 206,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "2.40",
+      "category": "Transport",
+      "expense_date": "2026-10-02",
+      "expense_time": "08:40",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:03:25+00:00"
+    },
+    {
+      "slot": 207,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "11.25",
+      "category": "Food",
+      "expense_date": "2026-10-02",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:03:26+00:00"
+    },
+    {
+      "slot": 208,
+      "note": "[PWDEMO-20261107-V1] 水电费 · 当月账单",
+      "amount": "104.75",
+      "category": "Bills",
+      "expense_date": "2026-10-03",
+      "expense_time": "18:20",
+      "payment_method": "bank_transfer",
+      "created_at": "2026-11-07T00:03:27+00:00"
+    },
+    {
+      "slot": 209,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "14.25",
+      "category": "Food",
+      "expense_date": "2026-10-04",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:03:28+00:00"
+    },
+    {
+      "slot": 210,
+      "note": "[PWDEMO-20261107-V1] 宽带 · 月费",
+      "amount": "89.00",
+      "category": "Bills",
+      "expense_date": "2026-10-05",
+      "expense_time": "10:10",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:03:29+00:00"
+    },
+    {
+      "slot": 211,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "6.80",
+      "category": "Transport",
+      "expense_date": "2026-10-05",
+      "expense_time": "18:05",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:03:30+00:00"
+    },
+    {
+      "slot": 212,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "16.75",
+      "category": "Food",
+      "expense_date": "2026-10-06",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:03:31+00:00"
+    },
+    {
+      "slot": 213,
+      "note": "[PWDEMO-20261107-V1] 咖啡 · 校园咖啡店",
+      "amount": "9.00",
+      "category": "Food",
+      "expense_date": "2026-10-07",
+      "expense_time": "15:10",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:03:32+00:00"
+    },
+    {
+      "slot": 214,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "13.55",
+      "category": "Food",
+      "expense_date": "2026-10-08",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:03:33+00:00"
+    },
+    {
+      "slot": 215,
+      "note": "[PWDEMO-20261107-V1] 电影 · 周末场次",
+      "amount": "19.25",
+      "category": "Entertainment",
+      "expense_date": "2026-10-08",
+      "expense_time": "21:00",
+      "payment_method": "credit_card",
+      "created_at": "2026-11-07T00:03:34+00:00"
+    },
+    {
+      "slot": 216,
+      "note": "[PWDEMO-20261107-V1] Grab · 网约车",
+      "amount": "24.50",
+      "category": "Transport",
+      "expense_date": "2026-10-09",
+      "expense_time": "08:40",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:03:35+00:00"
+    },
+    {
+      "slot": 217,
+      "note": "[PWDEMO-20261107-V1] 杂货 · 超市食材",
+      "amount": "65.05",
+      "category": "Food",
+      "expense_date": "2026-10-09",
+      "expense_time": "20:00",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:03:36+00:00"
+    },
+    {
+      "slot": 218,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "20.25",
+      "category": "Food",
+      "expense_date": "2026-10-10",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:03:37+00:00"
+    },
+    {
+      "slot": 219,
+      "note": "[PWDEMO-20261107-V1] 购物 · 文具和书籍",
+      "amount": "45.40",
+      "category": "Shopping",
+      "expense_date": "2026-10-11",
+      "expense_time": "16:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:03:38+00:00"
+    },
+    {
+      "slot": 220,
+      "note": "[PWDEMO-20261107-V1] 手机 · 月费",
+      "amount": "35.00",
+      "category": "Bills",
+      "expense_date": "2026-10-12",
+      "expense_time": "08:00",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:03:39+00:00"
+    },
+    {
+      "slot": 221,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "10.75",
+      "category": "Food",
+      "expense_date": "2026-10-12",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:03:40+00:00"
+    },
+    {
+      "slot": 222,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "3.50",
+      "category": "Transport",
+      "expense_date": "2026-10-13",
+      "expense_time": "18:05",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:03:41+00:00"
+    },
+    {
+      "slot": 223,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "15.15",
+      "category": "Food",
+      "expense_date": "2026-10-14",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:03:42+00:00"
+    },
+    {
+      "slot": 224,
+      "note": "[PWDEMO-20261107-V1] 健康 · 药房用品",
+      "amount": "39.00",
+      "category": "Health",
+      "expense_date": "2026-10-15",
+      "expense_time": "11:30",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:03:43+00:00"
+    },
+    {
+      "slot": 225,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "17.75",
+      "category": "Food",
+      "expense_date": "2026-10-16",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:03:44+00:00"
+    },
+    {
+      "slot": 226,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "2.40",
+      "category": "Transport",
+      "expense_date": "2026-10-17",
+      "expense_time": "08:40",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:03:45+00:00"
+    },
+    {
+      "slot": 227,
+      "note": "[PWDEMO-20261107-V1] 咖啡 · 校园咖啡店",
+      "amount": "13.50",
+      "category": "Food",
+      "expense_date": "2026-10-17",
+      "expense_time": "15:10",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:03:46+00:00"
+    },
+    {
+      "slot": 228,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "12.25",
+      "category": "Food",
+      "expense_date": "2026-10-18",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:03:47+00:00"
+    },
+    {
+      "slot": 229,
+      "note": "[PWDEMO-20261107-V1] 购物 · 学习用笔记本电脑",
+      "amount": "2499.00",
+      "category": "Shopping",
+      "expense_date": "2026-10-18",
+      "expense_time": "14:35",
+      "payment_method": "credit_card",
+      "created_at": "2026-11-07T00:03:48+00:00"
+    },
+    {
+      "slot": 230,
+      "note": "[PWDEMO-20261107-V1] 游戏 · 数字内容",
+      "amount": "31.15",
+      "category": "Entertainment",
+      "expense_date": "2026-10-19",
+      "expense_time": "21:00",
+      "payment_method": "credit_card",
+      "created_at": "2026-11-07T00:03:49+00:00"
+    },
+    {
+      "slot": 231,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "23.75",
+      "category": "Food",
+      "expense_date": "2026-10-20",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:03:50+00:00"
+    },
+    {
+      "slot": 232,
+      "note": "[PWDEMO-20261107-V1] 其他 · 打印与复印",
+      "amount": "9.25",
+      "category": "Other",
+      "expense_date": "2026-10-20",
+      "expense_time": null,
+      "payment_method": null,
+      "created_at": "2026-11-07T00:03:51+00:00"
+    },
+    {
+      "slot": 233,
+      "note": "[PWDEMO-20261107-V1] Grab · 网约车",
+      "amount": "12.20",
+      "category": "Transport",
+      "expense_date": "2026-10-21",
+      "expense_time": "18:05",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:03:52+00:00"
+    },
+    {
+      "slot": 234,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "16.25",
+      "category": "Food",
+      "expense_date": "2026-10-22",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:03:53+00:00"
+    },
+    {
+      "slot": 235,
+      "note": "[PWDEMO-20261107-V1] 杂货 · 超市食材",
+      "amount": "80.75",
+      "category": "Food",
+      "expense_date": "2026-10-23",
+      "expense_time": "20:00",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:03:54+00:00"
+    },
+    {
+      "slot": 236,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "9.75",
+      "category": "Food",
+      "expense_date": "2026-10-24",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:03:55+00:00"
+    },
+    {
+      "slot": 237,
+      "note": "[PWDEMO-20261107-V1] 购物 · 日用品",
+      "amount": "70.50",
+      "category": "Shopping",
+      "expense_date": "2026-10-24",
+      "expense_time": "16:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:03:56+00:00"
+    },
+    {
+      "slot": 238,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "8.00",
+      "category": "Transport",
+      "expense_date": "2026-10-25",
+      "expense_time": "08:40",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:03:57+00:00"
+    },
+    {
+      "slot": 239,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "19.25",
+      "category": "Food",
+      "expense_date": "2026-10-26",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:03:58+00:00"
+    },
+    {
+      "slot": 240,
+      "note": "[PWDEMO-20261107-V1] 聚会 · 活动门票",
+      "amount": "48.15",
+      "category": "Entertainment",
+      "expense_date": "2026-10-26",
+      "expense_time": "21:00",
+      "payment_method": "credit_card",
+      "created_at": "2026-11-07T00:03:59+00:00"
+    },
+    {
+      "slot": 241,
+      "note": "[PWDEMO-20261107-V1] 咖啡 · 校园咖啡店",
+      "amount": "17.50",
+      "category": "Food",
+      "expense_date": "2026-10-27",
+      "expense_time": "15:10",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:04:00+00:00"
+    },
+    {
+      "slot": 242,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "14.25",
+      "category": "Food",
+      "expense_date": "2026-10-28",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:04:01+00:00"
+    },
+    {
+      "slot": 243,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "2.40",
+      "category": "Transport",
+      "expense_date": "2026-10-29",
+      "expense_time": "18:05",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:04:02+00:00"
+    },
+    {
+      "slot": 244,
+      "note": "[PWDEMO-20261107-V1] 边界核对 · 十月底",
+      "amount": "15.75",
+      "category": "Food",
+      "expense_date": "2026-10-31",
+      "expense_time": "23:59",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:04:03+00:00"
+    },
+    {
+      "slot": 245,
+      "note": "[PWDEMO-20261107-V1] 边界核对 · 十一月初",
+      "amount": "8.25",
+      "category": "Food",
+      "expense_date": "2026-11-01",
+      "expense_time": "00:00",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:04:04+00:00"
+    },
+    {
+      "slot": 246,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "9.10",
+      "category": "Food",
+      "expense_date": "2026-11-01",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:04:05+00:00"
+    },
+    {
+      "slot": 247,
+      "note": "[PWDEMO-20261107-V1] 房租 · 学生公寓",
+      "amount": "750.00",
+      "category": "Bills",
+      "expense_date": "2026-11-01",
+      "expense_time": "09:00",
+      "payment_method": "bank_transfer",
+      "created_at": "2026-11-07T00:04:06+00:00"
+    },
+    {
+      "slot": 248,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "2.40",
+      "category": "Transport",
+      "expense_date": "2026-11-02",
+      "expense_time": "08:40",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:04:07+00:00"
+    },
+    {
+      "slot": 249,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 鸡饭",
+      "amount": "11.60",
+      "category": "Food",
+      "expense_date": "2026-11-02",
+      "expense_time": "12:30",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:04:08+00:00"
+    },
+    {
+      "slot": 250,
+      "note": "[PWDEMO-20261107-V1] 水电费 · 当月账单",
+      "amount": "106.10",
+      "category": "Bills",
+      "expense_date": "2026-11-03",
+      "expense_time": "18:20",
+      "payment_method": "bank_transfer",
+      "created_at": "2026-11-07T00:04:09+00:00"
+    },
+    {
+      "slot": 251,
+      "note": "[PWDEMO-20261107-V1] 晚餐 · 面馆",
+      "amount": "14.60",
+      "category": "Food",
+      "expense_date": "2026-11-04",
+      "expense_time": "19:20",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:04:10+00:00"
+    },
+    {
+      "slot": 252,
+      "note": "[PWDEMO-20261107-V1] 宽带 · 月费",
+      "amount": "89.00",
+      "category": "Bills",
+      "expense_date": "2026-11-05",
+      "expense_time": "10:10",
+      "payment_method": "debit_card",
+      "created_at": "2026-11-07T00:04:11+00:00"
+    },
+    {
+      "slot": 253,
+      "note": "[PWDEMO-20261107-V1] 交通 · 公交与轨道",
+      "amount": "6.80",
+      "category": "Transport",
+      "expense_date": "2026-11-05",
+      "expense_time": "18:05",
+      "payment_method": "e_wallet",
+      "created_at": "2026-11-07T00:04:12+00:00"
+    },
+    {
+      "slot": 254,
+      "note": "[PWDEMO-20261107-V1] 早餐 · 校园食堂",
+      "amount": "17.10",
+      "category": "Food",
+      "expense_date": "2026-11-06",
+      "expense_time": "08:15",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:04:13+00:00"
+    },
+    {
+      "slot": 255,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 校园食堂",
+      "amount": "12.50",
+      "category": "Food",
+      "expense_date": "2026-11-06",
+      "expense_time": "12:30",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:04:14+00:00"
+    },
+    {
+      "slot": 256,
+      "note": "[PWDEMO-20261107-V1] 午餐 · 校园食堂",
+      "amount": "12.50",
+      "category": "Food",
+      "expense_date": "2026-11-06",
+      "expense_time": "12:30",
+      "payment_method": "cash",
+      "created_at": "2026-11-07T00:04:15+00:00"
+    }
+  ]
+}

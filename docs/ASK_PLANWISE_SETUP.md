@@ -14,8 +14,9 @@
 - [ ] 线上 SQL 权限查询、中文回答质量、延迟、Neurons 用量与限流仍需分别验收。
 - [x] 笔记助手前端：自动识别 Notes 当前查看/编辑的笔记，可更换/搜索笔记，准备问题或总结草稿，中英文与未保存状态提示。
 - [x] 笔记助手总结/问答代码：按当前用户权限读取指定笔记，检查版本、转换富文本和清单、显示来源；自动保存后再发送，隔离每篇笔记/版本的对话。
-- [ ] 最新笔记助手函数部署及真实账号线上验收；待办提取另行实施。
-- [ ] 业务查询、RAG、来源引用、操作预览确认、Groq 故障切换。
+- [x] 用户已确认 Note Assistant 完成；笔记内待办提取仍另行实施。
+- [x] Expenses Assistant 第一版代码：独立 Tab，消费回顾、期间变化和账单来源；新增 SQL、函数部署与线上模型验收见 [支出助手说明](./EXPENSES_ASSISTANT_SETUP.md)。
+- [ ] Tasks Assistant、统一 RAG 入口、跨模块来源、操作预览确认、Groq 故障切换。
 
 ## 笔记助手总结与问答（2026-11-07）
 
@@ -92,8 +93,10 @@ CLI 3 使用 `--remote=<ref>` 指定项目；`--project-ref` 当前仍可用，�
 - `index.ts`：[入口](../supabase/functions/ask-planwise/index.ts)
 - `handler.mjs`：[处理器](../supabase/functions/ask-planwise/handler.mjs)
 - `note-context.mjs`：[笔记解析与上下文](../supabase/functions/ask-planwise/note-context.mjs)
+- `expense-context.mjs`：[支出查询与模型上下文](../supabase/functions/ask-planwise/expense-context.mjs)
+- `expense-report.mjs`：[支出报告校验与数据规则](../supabase/functions/ask-planwise/expense-report.mjs)
 
-三个文件放在同一级；不要只复制 index.ts 而遗漏其依赖文件。
+当前五个文件放在同一级；不要只复制 index.ts 而遗漏其依赖文件。支出助手还需要先执行新增只读 SQL，详见支出助手说明。
 
 ### 3. 核对服务端环境变量
 

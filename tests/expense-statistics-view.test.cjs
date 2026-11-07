@@ -9,7 +9,7 @@ function load(file){
   const {code}=babel.transformSync(fs.readFileSync(filename,"utf8"),{filename,babelrc:false,configFile:false,presets:[["@babel/preset-env",{targets:{node:"current"}}],"@babel/preset-react"]});
   const mod=new Module(filename);mod.require=name=>{
     if(name==="react-i18next")return{useTranslation:()=>({t:key=>key})};
-    if(name==="react-router-dom")return{Link:props=>React.createElement("a",{href:props.to},props.children),useNavigate:()=>()=>{}};
+    if(name==="react-router-dom")return{Link:props=>React.createElement("a",{href:props.to},props.children),useNavigate:()=>()=>{},useLocation:()=>({search:"",key:"test"})};
     if(name==="../contexts/AuthContext")return{useAuth:()=>({user,signOut:async()=>{}})};
     if(name==="../services/expenseService")return service;
     if(name==="./LanguageSwitcher")return{__esModule:true,default:()=>null};

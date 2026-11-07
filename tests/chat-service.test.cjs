@@ -6,7 +6,7 @@ function load(file,globals={},imports={}){
 }
 function client(fetchImpl,user="u1"){
   const supabase={auth:{getSession:async()=>({data:{session:{user:{id:user},access_token:"user-token"}}})}};
-  return load("src/services/chatService.jsx",{fetch:fetchImpl},{"../lib/supabase":{supabase}});
+  return load("src/services/chatService.jsx",{fetch:fetchImpl},{"../lib/supabase":{supabase},"../../supabase/functions/ask-planwise/expense-report.mjs":load("supabase/functions/ask-planwise/expense-report.mjs")});
 }
 test("chat sends only session JWT, public key and selected conversation to the Edge Function",async()=>{
   let call;const service=client(async(url,options)=>{call={url,options};return Response.json({requestId:"r1",reply:"Hello",quota});});
@@ -59,4 +59,17 @@ test("real chat client and Edge handler complete the selected-note contract with
   const result=await service.sendChat(options);assert.equal(result.reply,"Prepare the slides.");assert.equal(result.sources[0].version,version);
   assert.equal(JSON.parse(modelBody.messages.at(-1).content).reference_note_data.content,"Prepare the slides.");
   removed=true;await assert.rejects(service.sendChat({...options,requestId:require("node:crypto").randomUUID()}),error=>error.code==="AI_NOTE_UNAVAILABLE");assert.equal(reservations,1);
+});
+
+test("expense client validates exact reports and source ownership links, and detects old Edge deployments",async()=>{
+  const fixture=require("./fixtures/expense-insight.cjs"),context=fixture.context(),{owner_id,...report}=fixture.report();
+  const sources=[...report.current.largest,...report.previous.largest].map(row=>({type:"expense",id:row.id,version:row.version,title:row.note,date:row.date,amount_cents:row.amount_cents}));
+  let sent;
+  const service=client(async(_url,options)=>{sent=JSON.parse(options.body);return Response.json({requestId:"r1",reply:"Review",quota,sources,report});});
+  const data=await service.sendChat({...input,context});assert.equal(data.report.current.total_cents,"6000");assert.equal(sent.context.type,"expenses");assert.equal(sent.context.month,"2026-10");assert.equal(sent.messages[0].content,"Hello");
+  const old=client(async()=>Response.json({code:"AI_INPUT_INVALID"},{status:400}));await assert.rejects(old.sendChat({...input,context}),error=>error.code==="AI_EXPENSE_SETUP_REQUIRED");
+  const mismatch=client(async()=>Response.json({requestId:"r1",reply:"Wrong",quota,report,sources:[{...sources[0],id:"foreign"},...sources.slice(1)]}));
+  await assert.rejects(mismatch.sendChat({...input,context}),error=>error.code==="AI_EXPENSE_DATA_INVALID");
+  const bad={...report,current:{...report.current,total_cents:"10"}},invalid=client(async()=>Response.json({requestId:"r1",reply:"Wrong",quota,report:bad,sources}));
+  await assert.rejects(invalid.sendChat({...input,context}),error=>error.code==="AI_EXPENSE_DATA_INVALID");
 });

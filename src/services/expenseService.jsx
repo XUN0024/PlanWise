@@ -10,6 +10,13 @@ async function requireUser(userId) {
   if (error) throw error;
   if (data?.session?.user?.id !== userId) throw expenseError("EXPENSE_AUTH_REQUIRED");
 }
+export async function getExpenseById(id,userId) {
+  await requireUser(userId);
+  const {data,error}=await supabase.from("expenses").select(FIELDS).eq("id",id).eq("user_id",userId).maybeSingle();
+  if(error)throw error;
+  if(!data)throw expenseError("EXPENSE_NOT_FOUND");
+  return expenseFromRow(data);
+}
 export async function getExpenses(userId, page = 0, filters = {}) {
   await requireUser(userId);
   if (!Number.isSafeInteger(page) || page < 0) throw expenseError("EXPENSE_PAGE_INVALID");

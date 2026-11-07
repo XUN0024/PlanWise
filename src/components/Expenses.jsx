@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import LanguageSwitcher from "./LanguageSwitcher";
@@ -8,7 +8,7 @@ import ExpenseDialog from "./ExpenseDialog";
 import ExpenseFilters from "./ExpenseFilters";
 import ExpenseStatistics from "./ExpenseStatistics";
 import ExpenseReceipts from "./ExpenseReceipts";
-import { getExpenses, getExpenseStatistics, createExpense, updateExpense, deleteExpense } from "../services/expenseService";
+import { getExpenses, getExpenseStatistics, getExpenseById, createExpense, updateExpense, deleteExpense } from "../services/expenseService";
 import { expenseToday, expenseIsDirty, expenseErrorKey, formatExpenseRM, expensePayload } from "../lib/expenseModel";
 import { DEFAULT_EXPENSE_FILTERS, hasExpenseFilters, normalizeExpenseFilters } from "../lib/expenseQuery";
 
@@ -16,6 +16,7 @@ export default function Expenses() {
   const { user, signOut } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation(), handledSource = useRef(null), sourceRequest = useRef(null);
   const [snapshot, setSnapshot] = useState({ userId: null, page: 0, items: [], hasMore: false, loading: true, error: null });
   const [view, setView] = useState({ userId: user?.id, page: 0, filters: { ...DEFAULT_EXPENSE_FILTERS } });
   const [debouncedSearch, setDebouncedSearch] = useState({ userId: user?.id, value: "" });
@@ -101,6 +102,8 @@ export default function Expenses() {
     if (action.type === "new") {
       const draft = { id: crypto.randomUUID(), description: "", amount: "", date: expenseToday(), category: "Food", currency: "MYR", time: "", paymentMethod: "" };
       setEditor({ userId: user.id, isNew: true, draft, base: { ...draft } });
+    } else if(action.type === "source") {
+      setEditor({userId:user.id,isNew:false,draft:{...action.record},base:{...action.record}});
     } else if (["edit","delete","receipts"].includes(action.type)) {
       const record = current.items.find((item) => item.id === action.id);
       if (!record) return;
@@ -123,9 +126,23 @@ export default function Expenses() {
   };
   const request = (action) => {
     if (operation.current || receiptOperation.current || !user?.id) return;
-    if (current.loading && !["close", "navigate", "signOut", "filters", "resetFilters", "statsRetry", "granularity"].includes(action.type)) return;
+    if (current.loading && !["source","close", "navigate", "signOut", "filters", "resetFilters", "statsRetry", "granularity"].includes(action.type)) return;
     if (dirty) setPending({ ...action, userId: user.id }); else perform(action);
   };
+  sourceRequest.current=request;
+  useEffect(()=>{
+    const id=new URLSearchParams(location.search||"").get("expense"),key=user?.id+":"+(location.key||"")+":"+id;
+    if(!id||!user?.id||busy||receiptBusy||handledSource.current===key)return;
+    let cancelled=false;
+    const owner=user.id;
+    getExpenseById(id,owner).then(record=>{
+      if(cancelled||currentUser.current!==owner)return;
+      handledSource.current=key;sourceRequest.current({type:"source",record});
+    }).catch(()=>{
+      if(!cancelled&&currentUser.current===owner){handledSource.current=key;setWriteError("askPlanwise.expenses.sourceUnavailable");}
+    });
+    return()=>{cancelled=true;};
+  },[location.search,location.key,user?.id,busy,receiptBusy]);
   const navigateHeader = (event) => {
     if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     const link = event.target.closest("a"); if (!link) return;

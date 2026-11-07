@@ -1,18 +1,20 @@
 const test=require("node:test"),assert=require("node:assert/strict"),{randomUUID,webcrypto}=require("node:crypto");
 const A="00000000-0000-4000-8000-000000000001",quota={dailyLimit:20,dailyRemaining:19,resetAt:"2026-11-08T00:00:00Z"};
+const expenseFixture=require("./fixtures/expense-insight.cjs");
 let api;test.before(async()=>{api=await import("../supabase/functions/ask-planwise/handler.mjs");});
 function fixture(){
   const env={SUPABASE_URL:"https://test.supabase.co",SUPABASE_ANON_KEY:"public-key",SUPABASE_SERVICE_ROLE_KEY:"private-service-key",CLOUDFLARE_ACCOUNT_ID:"a".repeat(32),CLOUDFLARE_API_TOKEN:"private-cloudflare-token"};
-  const calls=[],logs=[];let reserve={state:"new",quota},provider={result:{choices:[{message:{content:"你好！"}}],usage:{prompt_tokens:20,completion_tokens:3}},success:true},status=200,finishFails=false,authStatus=200,authUser={id:A},providerFetch,noteRows=[],noteStatus=200;
-  const handler=api.createChatHandler({env:key=>env[key],cryptoImpl:webcrypto,logger:{warn:(...value)=>logs.push(value),error:(...value)=>logs.push(value)},fetchImpl:async(url,options={})=>{
+  const calls=[],logs=[];let reserve={state:"new",quota},provider={result:{choices:[{message:{content:"你好！"}}],usage:{prompt_tokens:20,completion_tokens:3}},success:true},status=200,finishFails=false,authStatus=200,authUser={id:A},providerFetch,noteRows=[],noteStatus=200,expenseReport=expenseFixture.report(),expenseStatus=200;
+  const handler=api.createChatHandler({env:key=>env[key],cryptoImpl:webcrypto,now:()=>Date.parse("2026-11-07T04:00:00Z"),logger:{warn:(...value)=>logs.push(value),error:(...value)=>logs.push(value)},fetchImpl:async(url,options={})=>{
     calls.push({url,options,body:options.body?JSON.parse(options.body):null});
     if(url.endsWith("/auth/v1/user"))return Response.json(authUser,{status:authStatus});
     if(new URL(url).pathname==="/rest/v1/notes")return Response.json(noteRows,{status:noteStatus});
+    if(url.endsWith("/get_expense_insights"))return Response.json(expenseReport,{status:expenseStatus});
     if(url.endsWith("/reserve_ai_chat"))return Response.json(reserve);
     if(url.endsWith("/finish_ai_chat")){if(finishFails)throw Error("private-service-key failure");return new Response(null,{status:204});}
     return providerFetch?providerFetch(options):Response.json(provider,{status});
   }});
-  return{handler,calls,logs,env,setReserve:value=>reserve=value,setProvider:(value,code=200)=>{provider=value;status=code;},setFinishFailure:()=>finishFails=true,setAuthStatus:value=>authStatus=value,setAuthUser:value=>authUser=value,setProviderFetch:value=>providerFetch=value,setNotes:(value,code=200)=>{noteRows=value;noteStatus=code;}};
+  return{handler,calls,logs,env,setReserve:value=>reserve=value,setProvider:(value,code=200)=>{provider=value;status=code;},setFinishFailure:()=>finishFails=true,setAuthStatus:value=>authStatus=value,setAuthUser:value=>authUser=value,setProviderFetch:value=>providerFetch=value,setNotes:(value,code=200)=>{noteRows=value;noteStatus=code;},setExpenses:(value,code=200)=>{expenseReport=value;expenseStatus=code;}};
 }
 const body=()=>({requestId:randomUUID(),messages:[{role:"user",content:"你好，请介绍你自己。"}]});
 const request=(data=body(),extra={})=>new Request("https://test.supabase.co/functions/v1/ask-planwise",{method:"POST",headers:{Authorization:"Bearer user-session-jwt","Content-Type":"application/json",Origin:"http://localhost:3000",...extra.headers},body:JSON.stringify(data),...extra});
@@ -114,4 +116,31 @@ test("rich-text reference preserves list numbering, nesting and literal text wit
   const document={type:"doc",content:[paragraph("Meeting"),{type:"orderedList",attrs:{start:3},content:[{type:"listItem",content:[paragraph("Slides"),{type:"bulletList",content:[{type:"listItem",content:[paragraph("Charts")]}]}]},{type:"listItem",content:[paragraph("Demo")]}]}]};
   assert.match(notePlainText("planwise-richtext:v1:"+JSON.stringify(document)),/3\. Slides\n  - Charts\n4\. Demo/);
   assert.equal(notePlainText("<script>literal text</script>"),"<script>literal text</script>");
+});
+
+test("expense review reads exact owner-scoped facts with the user's credentials and sends formatted figures to the model",async()=>{
+  const f=fixture(),input={...body(),context:expenseFixture.context()},response=await f.handler(request(input)),data=await response.json();
+  assert.equal(response.status,200);assert.equal(data.report.current.total_cents,"6000");assert.equal(data.report.owner_id,undefined);assert.equal(data.sources.length,4);
+  const rpc=f.calls.find(call=>call.url.endsWith("/get_expense_insights"));assert.equal(rpc.options.headers.Authorization,"Bearer user-session-jwt");assert.equal(rpc.options.headers.apikey,"public-key");
+  assert.deepEqual(rpc.body,{p_month:"2026-10-01",p_small_amount:"20.00",p_search:null,p_category:null,p_as_of:"2026-11-07"});
+  const model=f.calls.find(call=>call.url.startsWith("https://api.cloudflare.com")),facts=JSON.parse(model.body.messages.at(-1).content).verified_expense_report;
+  assert.equal(facts.current.total_myr,"60.00");assert.equal(facts.comparison.categories[1].delta_myr,"-10.00");assert.equal(facts.comparison.change_percent,"50.00%");
+  assert.match(model.body.messages[0].content,/ALL matching records/);assert.match(model.body.messages[0].content,/Do not infer income, budgets/);
+  assert.equal(f.calls.some(call=>new URL(call.url).pathname==="/rest/v1/notes"),false);
+});
+test("expense setup, bad scopes, invalid sums and foreign report owners fail before model quota reservation",async()=>{
+  for(const ctx of [{month:"2099-01"},{month:["2026-10"]},{smallAmount:"1.005"},{category:"Unknown"},{user_id:A}]){
+    const f=fixture(),response=await f.handler(request({...body(),context:{...expenseFixture.context(),...ctx}}));assert.equal(response.status,400);
+    assert.equal(f.calls.some(call=>call.url.endsWith("/reserve_ai_chat")),false);
+  }
+  for(const mode of ["missing","foreign","tampered"]){
+    const f=fixture(),report=expenseFixture.report();if(mode==="foreign")report.owner_id=NOTE;if(mode==="tampered")report.current.total_cents="1";
+    f.setExpenses(report,mode==="missing"?404:200);const data=await(await f.handler(request({...body(),context:expenseFixture.context()}))).json();
+    assert.equal(data.code,mode==="missing"?"AI_EXPENSE_SETUP_REQUIRED":"AI_EXPENSE_DATA_INVALID");assert.equal(f.calls.some(call=>call.url.endsWith("/reserve_ai_chat")),false);
+  }
+});
+test("expense retries re-query current data, reconstruct reports/sources from cache, and explicitly reject changed fingerprints",async()=>{
+  const f=fixture();f.setReserve({state:"cached",reply:"Prior explanation",quota});let data=await(await f.handler(request({...body(),context:expenseFixture.context()}))).json();
+  assert.equal(data.cached,true);assert.equal(data.sources.length,4);assert.equal(data.report.comparison.delta_cents,"2000");assert.equal(f.calls.some(call=>call.url.startsWith("https://api.cloudflare.com")),false);
+  f.setReserve({state:"AI_REQUEST_CONFLICT",quota});data=await(await f.handler(request({...body(),context:expenseFixture.context()}))).json();assert.equal(data.code,"AI_EXPENSE_CHANGED");assert.equal(data.retryWithNewId,true);
 });

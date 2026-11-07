@@ -12,7 +12,7 @@ function load(file){
     if(name==="react-i18next")return{useTranslation:()=>({t:(key,values)=>values?.title?key+" "+values.title:key})};if(name==="react-router-dom")return{useLocation:()=>({pathname}),useNavigate:()=>to=>navigations.push(to)};if(name==="../contexts/AuthContext")return{useAuth:()=>({user})};
     if(name==="../services/chatService")return{sendChat:options=>{calls.push(options);return answer(options);}};
     if(name==="../services/noteService")return{getNoteChoices:userId=>{catalogCalls.push(userId);return fetchChoices(userId);}};
-    return name.startsWith(".")?load(path.relative(path.resolve(__dirname,".."),path.resolve(path.dirname(filename),name+".jsx"))):require(name);
+    return name.startsWith(".")?load(path.relative(path.resolve(__dirname,".."),path.resolve(path.dirname(filename),/\.(mjs|jsx)$/.test(name)?name:name+".jsx"))):require(name);
   };mod._compile(code,filename);cache.set(filename,mod.exports);return mod.exports;
 }
 const App=load("src/components/AskPlanwise.jsx").default,quota={dailyLimit:20,dailyRemaining:19};
@@ -38,6 +38,7 @@ test("global header opens a full-height scope-labelled panel, preserves conversa
 const note=(id,title,extra={})=>({id,title,updatedAt:"2026-11-07T03:00:00.123456+00:00",saved:true,dirty:false,saving:false,saveError:false,...extra});
 const source=(currentNote,notes=[])=>({userId:"u1",notes,currentNote,loading:false,error:false});
 async function search(value){await act(async()=>{const input=document.querySelector('input');Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,"value").set.call(input,value);input.dispatchEvent(new window.Event("input",{bubbles:true}));});}
+async function changeInput(node,value){await act(async()=>{Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,"value").set.call(node,value);node.dispatchEvent(new window.Event("input",{bubbles:true}));});}
 
 test("the open note is automatic, summary requests carry its version, sources open the note, and ordinary chat stays separate",async()=>{
   const current=note("a","Project meeting"),ui=await mount({pathname:"/notes",source:source(current,[current])});
@@ -141,4 +142,36 @@ test("only explicit failed attempts get a new retry id, clear affects the local 
   await act(async()=>button("PW AI").click());await type("Retry me");await act(async()=>button("askPlanwise.send").click());await act(async()=>button("askPlanwise.retry").click());assert.notEqual(calls[0].requestId,calls[1].requestId);
   await act(async()=>button("askPlanwise.clear").click());assert.doesNotMatch(document.body.textContent,/Retry me|Success/);
   await act(async()=>document.dispatchEvent(new window.KeyboardEvent("keydown",{key:"Escape",bubbles:true,cancelable:true})));assert.equal(document.querySelector('[role="dialog"]'),null);assert.ok(document.activeElement===button("PW AI"));await ui.close();
+});
+
+test("Expenses tab runs review/comparison with exact figures, explicit scope and navigable expense sources",async()=>{
+  const fixture=require("./fixtures/expense-insight.cjs"),ui=await mount({pathname:"/expenses"});
+  answer=async options=>{const {owner_id,...report}=fixture.report();report.scope.search=options.context.search||null;return{reply:options.context.action==="review"?"Review explanation":"Comparison explanation",quota,report,
+    sources:report.current.largest.map(row=>({type:"expense",id:row.id,version:row.version,title:row.note,date:row.date,amount_cents:row.amount_cents}))};};
+  await act(async()=>button("PW AI").click());assert.equal(button("askPlanwise.expenses.scope").getAttribute("aria-pressed"),"true");
+  await changeInput(document.querySelector('input[type="month"]'),"2026-10");assert.equal(calls.length,0);
+  await act(async()=>button("askPlanwise.expenses.analyzeSelected").click());assert.equal(calls.length,1);assert.equal(calls[0].context.type,"expenses");assert.equal(calls[0].context.action,"review");
+  assert.match(document.body.textContent,/RM 60\.00/);assert.match(document.body.textContent,/Review explanation/);assert.match(document.body.textContent,/2026-10-01 → 2026-10-31/);
+  await act(async()=>button("askPlanwise.expenses.compare").click());assert.equal(calls.length,2);assert.equal(calls[1].context.action,"compare");assert.equal(calls[1].messages.length,1);
+  assert.match(document.body.textContent,/RM 40\.00/);assert.match(document.body.textContent,/RM 20\.00/);assert.match(document.body.textContent,/50\.00%/);assert.match(document.body.textContent,/Comparison explanation/);
+  const link=document.querySelector('a[href^="/expenses?expense="]');await act(async()=>link.click());assert.ok(navigations[0].startsWith("/expenses?expense="));
+  await ui.close();
+});
+
+test("expense questions stay separate from general/note chat and invalid filters cannot send",async()=>{
+  const ui=await mount();await act(async()=>button("PW AI").click());await type("General draft");
+  await act(async()=>button("askPlanwise.expenses.scope").click());assert.equal(document.querySelector("textarea").value,"");
+  await changeInput(document.querySelector('input[type="month"]'),"2099-01");await type("Do not send this invalid scope");
+  await act(async()=>document.querySelector("form").dispatchEvent(new window.Event("submit",{bubbles:true,cancelable:true})));assert.equal(calls.length,0);assert.match(document.body.textContent,/AI_EXPENSE_INPUT_INVALID/);
+  await act(async()=>button("askPlanwise.scope").click());assert.equal(document.querySelector("textarea").value,"General draft");
+  await act(async()=>button("askPlanwise.notes.scope").click());assert.doesNotMatch(document.body.textContent,/Do not send this invalid scope/);
+  await ui.close();
+});
+
+test("late expense report results cannot survive an account switch",async()=>{
+  const ui=await mount({pathname:"/expenses"}),pending=deferred();answer=()=>pending.promise;
+  await act(async()=>button("PW AI").click());await changeInput(document.querySelector('input[type="month"]'),"2026-10");await type("Private expense question");
+  await act(async()=>button("askPlanwise.send").click());assert.equal(calls.length,1);assert.equal(calls[0].context.type,"expenses");
+  user={id:"u2"};await ui.render();await act(async()=>pending.resolve({reply:"Private old-account analysis",quota,report:require("./fixtures/expense-insight.cjs").report(),sources:[]}));
+  await act(async()=>button("PW AI").click());assert.doesNotMatch(document.body.textContent,/Private old-account analysis|Private expense question|RM 60\.00/);await ui.close();
 });

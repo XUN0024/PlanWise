@@ -7,7 +7,23 @@ const resources = {
   en: {
     translation: {
       askPlanwise: {
-        scope:"General chat",scopeHint:"This stage sends only this conversation to Cloudflare. Notes, tasks, expenses and files are not connected yet.",
+        expenses: {
+          scope:"Expenses assistant",title:"Understand your recorded spending",month:"Analysis month",filters:"Filters and small-payment threshold",
+          category:"Category",search:"Description contains",searchPlaceholder:"For example: coffee",smallAmount:"Small payment: amount up to (RM)",
+          analyzeMonth:"Analyze this month",analyzeSelected:"Analyze selected month",compare:"Explain period changes",
+          currentHint:"Month to date, compared with the previous month's corresponding dates. Dates use Malaysia time.",pastHint:"A complete historical month, compared with the previous complete month.",
+          reviewMode:"Current task: spending review",compareMode:"Current task: period comparison",
+          reviewPrompt:"Review the spending habits in the selected month. Explain the main categories, frequent descriptions, small-payment totals and large records.",
+          comparePrompt:"Explain where spending changed between the selected period and its comparison period, using category differences and recorded large expenses.",
+          placeholder:"Ask about the selected period…",scopeHint:"Uses all matching expense records for this selection. Does not read receipts or change records.",
+          figures:"Verified expense figures",total:"Recorded total",count:"Records",average:"Average per record",dailyAverage:"Average per calendar day",
+          previousPeriod:"Comparison period",previousTotal:"Previous total",change:"Net change",noPercentage:"Previous total is zero; no percentage change",
+          small:"Small payments (each ≤ {{amount}})",frequent:"Frequent descriptions · up to 5 groups",partial:"This is a partial month; today's records may still be incomplete.",
+          unequalDays:"These periods contain different numbers of calendar days.",empty:"No matching expenses are recorded for this period.",
+          exactHint:"Figures cover every matching record. Daily averages include all calendar days in the period.",source:"Expense: {{title}}",
+          sourceUnavailable:"This expense cannot be opened. It may have been deleted or be unavailable to this account.",exampleSources:"Related large records · up to 5 per period",
+        },
+        scope:"General chat",scopeHint:"General chat uses only this conversation. Switch to the note or expenses assistant to analyze those records.",
         close:"Close chat",conversation:"Conversation",welcome:"How can I help?",welcomeHint:"Ask a question, brainstorm an idea, or plan your next step.",you:"You",thinking:"Preparing a reply…",
         retry:"Retry",quota:"Today: {{remaining}} / {{limit}} requests left",quotaHint:"Daily request limits apply",clear:"Clear conversation",input:"Message",placeholder:"Ask PW AI…",stop:"Stop waiting",send:"Send",
         memoryHint:"This window keeps your conversation until refresh. The server caches replies for retries.",
@@ -27,6 +43,11 @@ const resources = {
           versionChanged: "This note has changed. New questions use its latest saved version and start a fresh conversation.",
         },
         errors:{
+          AI_EXPENSE_INPUT_INVALID:"Choose a month from 1900 through the current month, a valid category, and a small-payment threshold from RM 0.01 to RM 10,000.00.",
+          AI_EXPENSE_DATA_INVALID:"The expense figures could not be verified. Retry to load a fresh report.",
+          AI_EXPENSE_LOAD_FAILED:"Could not read expense statistics. Please retry shortly.",
+          AI_EXPENSE_SETUP_REQUIRED:"Run the Expenses Assistant SQL and deploy the latest ask-planwise function before using expense analysis.",
+          AI_EXPENSE_CHANGED:"Expense data changed since this request. Retry to generate a fresh analysis.",
           AI_MODEL_UNAVAILABLE:"This account cannot use the selected model. Check Cloudflare model availability and account access.",
           AI_NOTE_UNAVAILABLE:"This note is no longer available. Choose a note you can access.",
           AI_NOTE_CHANGED:"This note was updated elsewhere. Reload the note and send your question again.",
@@ -253,7 +274,23 @@ const resources = {
   zh: {
     translation: {
       askPlanwise: {
-        scope:"普通对话",scopeHint:"本阶段仅将本次聊天内容发送至 Cloudflare，尚未接入笔记、任务、支出和文件。",
+        expenses: {
+          scope:"支出助手",title:"了解你的消费记录",month:"分析月份",filters:"筛选范围与小额标准",
+          category:"分类",search:"描述包含",searchPlaceholder:"例如：咖啡",smallAmount:"小额消费：单笔不超过（RM）",
+          analyzeMonth:"分析本月消费",analyzeSelected:"分析所选月份",compare:"解释期间变化",
+          currentHint:"本月至今，对比上月同期；日期按马来西亚时间计算。",pastHint:"分析完整历史月份，并与上一个完整月份比较。",
+          reviewMode:"当前任务：消费习惯回顾",compareMode:"当前任务：期间变化解释",
+          reviewPrompt:"请分析所选月份的消费习惯，说明主要分类、高频消费描述、小额消费累计和大额记录。",
+          comparePrompt:"请比较所选期间和对照期间，结合分类差额与大额记录解释主要变化。",
+          placeholder:"针对所选期间继续提问…",scopeHint:"使用所选范围内全部匹配的支出记录，暂不读取收据，也不会修改账单。",
+          figures:"已核对的支出统计",total:"已记录总额",count:"记录笔数",average:"平均每笔",dailyAverage:"按日历天计算的日均",
+          previousPeriod:"对照期间",previousTotal:"上期总额",change:"净变化",noPercentage:"上期总额为零，不计算增长百分比",
+          small:"小额消费（单笔 ≤ {{amount}}）",frequent:"高频描述 · 最多展示 5 组",partial:"当前月份尚未结束，今天的记录也可能尚不完整。",
+          unequalDays:"这两个期间包含的日历天数不同。",empty:"这个期间没有匹配的已记录支出。",
+          exactHint:"统计覆盖全部匹配账单，日均包含期间内的所有日历天。",source:"账单来源：{{title}}",
+          sourceUnavailable:"无法打开这笔账单，它可能已删除，或当前账号无权访问。",exampleSources:"相关大额账单 · 每期最多 5 笔",
+        },
+        scope:"普通对话",scopeHint:"普通对话仅使用当前聊天内容。需要分析笔记或支出时，请切换到对应助手。",
         close:"关闭聊天",conversation:"聊天记录",welcome:"有什么需要帮助的？",welcomeHint:"可以提问、整理想法，或一起安排下一步。",you:"你",thinking:"正在生成回复…",
         retry:"重试",quota:"今日剩余 {{remaining}} / {{limit}} 次",quotaHint:"每日请求次数有限",clear:"清空对话",input:"消息",placeholder:"向 PW AI 提问…",stop:"停止等待",send:"发送",
         memoryHint:"会话在本窗口保留，刷新后清空；服务端保存回复缓存用于重试。",
@@ -273,6 +310,11 @@ const resources = {
           versionChanged: "这篇笔记已有更新，新的问题会使用最新保存的内容，并重新开始对话。",
         },
         errors:{
+          AI_EXPENSE_INPUT_INVALID:"请选择 1900 年至本月之间的月份、有效分类，以及 RM 0.01–10,000.00 的小额标准。",
+          AI_EXPENSE_DATA_INVALID:"支出统计未能通过核对，请重试获取最新结果。",
+          AI_EXPENSE_LOAD_FAILED:"暂时无法读取支出统计，请稍后重试。",
+          AI_EXPENSE_SETUP_REQUIRED:"请先执行支出助手 SQL，并部署最新版 ask-planwise 函数。",
+          AI_EXPENSE_CHANGED:"支出数据已发生变化，请重试以生成最新分析。",
           AI_MODEL_UNAVAILABLE:"当前账号无法使用所选模型，请检查 Cloudflare 模型开放情况和账号权限。",
           AI_NOTE_UNAVAILABLE:"这篇笔记已无法访问，请重新选择你有权使用的笔记。",
           AI_NOTE_CHANGED:"这篇笔记已在其他地方更新，请重新加载笔记后再发送问题。",

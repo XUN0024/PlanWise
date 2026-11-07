@@ -6,7 +6,7 @@ function load(file, imports = {}, globals = {}) {
   const { code } = babel.transformSync(fs.readFileSync(filename, "utf8"), { filename, babelrc: false, configFile: false,
     presets: [["@babel/preset-env", { targets: { node: "current" } }], "@babel/preset-react"] });
   const module = { exports: {} };
-  vm.runInNewContext(code, { module, exports: module.exports, crypto: require("node:crypto").webcrypto, ...globals,
+  vm.runInNewContext(code, { module, exports: module.exports, crypto: require("node:crypto").webcrypto, URLSearchParams, ...globals,
     require(name) {
       if (["../lib/expenseModel", "./expenseModel"].includes(name)) return load("src/lib/expenseModel.jsx");
       if (name === "../lib/expenseQuery") return load("src/lib/expenseQuery.jsx");
@@ -75,6 +75,7 @@ function backend(seed = []) {
     service: load("src/services/expenseService.jsx", { "../lib/supabase": { supabase } }) };
 }
 function page(back, overrides = {}, clock = {}) {
+  let location={search:"",key:"start"};
   let user = { id:"u1", email:"one@example.com" }, slots=[], cursor, dirty, tree, effects=[];
   const navigation=[], notices=[];
   const react = {
@@ -84,7 +85,7 @@ function page(back, overrides = {}, clock = {}) {
     useEffect(fn,deps) { const i=cursor++,old=slots[i];if(!old||deps.some((v,j)=>v!==old.deps[j])) effects.push(()=>{old?.cleanup?.();slots[i]={deps,cleanup:fn()};}); },
   };
   const component = load("src/components/Expenses.jsx", {
-    react, "react-i18next": {useTranslation:()=>({t:(key)=>key})}, "react-router-dom": {Link:"a",useNavigate:()=>value=>navigation.push(value)},
+    react, "react-i18next": {useTranslation:()=>({t:(key)=>key})}, "react-router-dom": {Link:"a",useNavigate:()=>value=>navigation.push(value),useLocation:()=>location},
     "../contexts/AuthContext": {useAuth:()=>({user,signOut:async()=>{notices.push("signOut");}})},
     "./LanguageSwitcher": {__esModule:true,default:"language"}, "./ExpenseEditor": {__esModule:true,default:"editor"},
     "./ExpenseDialog": {__esModule:true,default:"dialog"}, "../services/expenseService": {...back.service,getExpenseStatistics:async()=>({count:"0",totalCents:"0",averageCents:"0",granularity:"day",categories:[],methods:[],trend:[]}),...overrides},
@@ -95,6 +96,7 @@ function page(back, overrides = {}, clock = {}) {
   const nodes = (value) => Array.isArray(value) ? value.flatMap(nodes) : value && typeof value==="object" ? [value,...nodes(value.props?.children)] : [];
   const render = () => { let count=0;do {dirty=false;cursor=0;tree=component();const list=effects;effects=[];list.forEach(fn=>fn());if(++count>30)throw Error("render loop");}while(dirty); };
   return { render, navigation, notices,
+    openSource(id){location={search:"?expense="+encodeURIComponent(id),key:String(Math.random())};render();},
     async flush() {await new Promise(setImmediate);render();},
     editor:()=>nodes(tree).find(node=>node.type==="editor")?.props,
     dialog:()=>nodes(tree).find(node=>node.type==="dialog")?.props,
@@ -107,6 +109,23 @@ function page(back, overrides = {}, clock = {}) {
     unmount() {slots.forEach(slot=>slot?.cleanup?.());},
   };
 }
+
+test("expense sources load the owning record outside the current page and protect edits made during lookup",async()=>{
+  const back=backend([row("first"),row("source",{note:"Source expense"})]),pending=defer();
+  const app=page(back,{getExpenseById:()=>pending.promise});app.render();await app.flush();
+  app.openSource("source");
+  // Opening/editing another bill while the source request is in flight must not lose its draft.
+  app.button("expensesPanel.add").props.onClick();app.render();app.editor().onChange({description:"Keep my draft"});app.render();
+  pending.resolve(model.expenseFromRow(row("source",{note:"Source expense"})));await app.flush();
+  assert.ok(app.dialog());app.button("expensesPanel.keepEditing").props.onClick();app.render();
+  assert.equal(app.editor().draft.description,"Keep my draft");app.unmount();
+});
+
+test("source service filters by owner and refuses another account or missing record",async()=>{
+  const back=backend([row("source"),row("foreign",{user_id:"u2"})]);assert.equal((await back.service.getExpenseById("source","u1")).id,"source");
+  await assert.rejects(back.service.getExpenseById("foreign","u1"),error=>error.code==="EXPENSE_NOT_FOUND");
+  await assert.rejects(back.service.getExpenseById("source","u2"),error=>error.code==="EXPENSE_AUTH_REQUIRED");
+});
 
 test("money/date rules use exact cents, enforce MYR, validate leap days and preserve local calendar dates", () => {
   assert.equal(model.parseExpenseAmount("0.10") + model.parseExpenseAmount("0.20"),30);

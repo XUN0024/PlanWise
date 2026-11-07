@@ -13,6 +13,7 @@ import Notes from "./components/Notes";
 import Expenses from "./components/Expenses";
 import ErrorBoundary from "./components/ErrorBoundary";
 import AskPlanwise from "./components/AskPlanwise";
+import { NoteAssistantProvider } from "./contexts/NoteAssistantContext";
 import "./i18n/index.jsx"; // Initialize i18n
 
 // Protected Route Component
@@ -47,8 +48,10 @@ const PublicRoute = ({ children }) => {
 
 // App Routes Component
 const AppRoutes = () => {
+  const { user } = useAuth();
   return (
     <Router>
+      <NoteAssistantProvider key={user?.id || "signed-out"}>
       <div className="App">
         <AskPlanwise />
         <Routes>
@@ -103,6 +106,7 @@ const AppRoutes = () => {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </div>
+      </NoteAssistantProvider>
     </Router>
   );
 };

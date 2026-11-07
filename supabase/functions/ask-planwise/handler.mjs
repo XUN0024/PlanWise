@@ -1,3 +1,4 @@
+import { validateNoteContext, prepareNote, NOTE_SYSTEM, noteMessages } from "./note-context.mjs";
 export const MODEL = "@cf/zai-org/glm-4.7-flash";
 // Global assistant identity. Keep personal user preferences out of this shared prompt.
 // Editing this constant requires redeploying ask-planwise; no SQL or Secret changes.
@@ -12,8 +13,9 @@ Prefer short paragraphs and clear steps. Expand when the user needs more detail.
 When information is missing, state what is uncertain and ask only the most essential questions when needed. Do not guess the user's personal circumstances.
 
 [Current Capabilities]
-You currently support general conversation only. Base your answers solely on the chat content supplied in the current request.
-Notes, tasks, expenses, files, and internet search are not connected yet. You cannot read the user's data library or create, modify, or delete application records.
+In general chat, base your answers solely on the supplied conversation; you cannot read the user's records.
+In selected-note mode, the server supplies one authorized note for summaries and questions. You can use only that provided note, not the rest of the user's library.
+Tasks, expenses, attachments and internet search are not connected. You cannot create, modify, or delete application records.
 Users may provide text in the chat for you to summarize, organize, or turn into a plan. This does not mean you have accessed the application's database.
 
 [Response Boundaries]
@@ -35,7 +37,7 @@ export function validateChat(body) {
     return{role:item.role,content};
   });
   if(size>6000) throw fail("AI_INPUT_INVALID",400);
-  return{requestId:body.requestId,messages};
+  return{requestId:body.requestId,messages,context:validateNoteContext(body.context)};
 }
 async function readJson(response,limit) {
   const reader=response.body?.getReader();if(!reader) throw fail("AI_INVALID_RESPONSE",502);
@@ -91,11 +93,31 @@ export function createChatHandler({env,fetchImpl=fetch,cryptoImpl=crypto,now=()=
       if(!(request.headers.get("Content-Type")||"").toLowerCase().startsWith("application/json"))throw fail("AI_INPUT_INVALID",400);
       let body;try{body=await readJson(request,32768);}catch(error){throw fail("AI_INPUT_INVALID",error.status===413?413:400);}
       const input=validateChat(body);requestId=input.requestId;
+      let selectedNote = null;
+      if (input.context) {
+        const noteUrl = new URL(`${url}/rest/v1/notes`);
+        noteUrl.searchParams.set("select", "id,user_id,title,content,checklist,updated_at");
+        noteUrl.searchParams.set("id", "eq." + input.context.noteId);
+        noteUrl.searchParams.set("user_id", "eq." + userId);
+        // User JWT + public key intentionally enforce the caller's notes RLS.
+        let response;
+        try { response = await fetchImpl(noteUrl.toString(), { headers: { Authorization: authorization, apikey: publicKey }, signal: AbortSignal.timeout(10000) }); }
+        catch { throw fail("AI_NOTE_LOAD_FAILED", 503); }
+        if (!response.ok) throw fail(response.status === 401 ? "AI_AUTH_REQUIRED" : "AI_NOTE_LOAD_FAILED", response.status === 401 ? 401 : 503);
+        let rows;
+        try { rows = await readJson(response, 1048576); }
+        catch (error) { throw fail(error.code === "AI_BODY_TOO_LARGE" ? "AI_NOTE_TOO_LONG" : "AI_NOTE_CONTENT_INVALID", error.code === "AI_BODY_TOO_LARGE" ? 413 : 502); }
+        if (!Array.isArray(rows) || rows.length !== 1) throw fail("AI_NOTE_UNAVAILABLE", 404);
+        selectedNote = prepareNote(rows[0], input.context, userId);
+      }
+      const sources = selectedNote ? [selectedNote.source] : [];
+      const system = selectedNote ? SYSTEM + "\n\n" + NOTE_SYSTEM : SYSTEM;
+      const messages = selectedNote ? noteMessages(input.messages, selectedNote, input.context.action) : input.messages;
       const account=(env("CLOUDFLARE_ACCOUNT_ID")||"").trim(),token=(env("CLOUDFLARE_API_TOKEN")||"").trim();
       if(!/^[a-f0-9]{32}$/i.test(account)||!token||!/^[\x21-\x7E]{1,1024}$/.test(token))throw fail("AI_SERVER_CONFIG",503);
-      const hash=Array.from(new Uint8Array(await cryptoImpl.subtle.digest("SHA-256",new TextEncoder().encode(JSON.stringify({model:MODEL,system:SYSTEM,messages:input.messages}))))).map(value=>value.toString(16).padStart(2,"0")).join("");
+      const hash=Array.from(new Uint8Array(await cryptoImpl.subtle.digest("SHA-256",new TextEncoder().encode(JSON.stringify({model:MODEL,system,messages,context:input.context}))))).map(value=>value.toString(16).padStart(2,"0")).join("");
       const reservation=await rpc("reserve_ai_chat",{p_user_id:userId,p_request_id:requestId,p_request_hash:hash});quota=reservation?.quota;
-      if(reservation?.state==="cached")return json({requestId,reply:reservation.reply,model:MODEL,quota,cached:true,elapsedMs:reservation.elapsedMs,sources:[],actions:[]});
+      if(reservation?.state==="cached")return json({requestId,reply:reservation.reply,model:MODEL,quota,cached:true,elapsedMs:reservation.elapsedMs,sources,actions:[]});
       if(reservation?.state!=="new"){
         const code=typeof reservation?.state==="string"&&reservation.state.startsWith("AI_")?reservation.state:"AI_DATABASE_ERROR";
         throw fail(code,["AI_IN_PROGRESS","AI_REQUEST_CONFLICT","AI_RETRY_NEW_REQUEST"].includes(code)?409:429,{retryWithNewId:code==="AI_RETRY_NEW_REQUEST"});
@@ -107,7 +129,7 @@ export function createChatHandler({env,fetchImpl=fetch,cryptoImpl=crypto,now=()=
       try {
         const response=await fetchImpl(`https://api.cloudflare.com/client/v4/accounts/${account}/ai/run/${MODEL}`,{method:"POST",
           headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},
-          body:JSON.stringify({messages:[{role:"system",content:SYSTEM},...input.messages],max_completion_tokens:512,stream:false,store:false,chat_template_kwargs:{enable_thinking:false},tool_choice:"none"}),signal:controller.signal});
+          body:JSON.stringify({messages:[{role:"system",content:system},...messages],max_completion_tokens:selectedNote ? 1024 : 512,stream:false,store:false,chat_template_kwargs:{enable_thinking:false},tool_choice:"none"}),signal:controller.signal});
         if(!response.ok){let payload;try{payload=await readJson(response,32768);}catch{}throw providerFailure(response.status,payload);}
         let payload;try{payload=await readJson(response,131072);}catch{throw fail("AI_INVALID_RESPONSE",502,{retryWithNewId:true});}
         if(payload?.success===false)throw providerFailure(response.status,payload);
@@ -117,7 +139,7 @@ export function createChatHandler({env,fetchImpl=fetch,cryptoImpl=crypto,now=()=
       } finally {clearTimeout(timeout);request.signal.removeEventListener("abort",abort);}
       // Persist the short retry cache before acknowledging success. No second model call on retry.
       await finish("completed",result);reserved=false;
-      return json({requestId,reply:result.reply,model:MODEL,quota,cached:false,elapsedMs:Math.max(0,now()-started),sources:[],actions:[]});
+      return json({requestId,reply:result.reply,model:MODEL,quota,cached:false,elapsedMs:Math.max(0,now()-started),sources,actions:[]});
     } catch(error) {
       const code=generated?"AI_RESULT_PENDING":typeof error?.code==="string"&&error.code.startsWith("AI_")?error.code:"AI_UNAVAILABLE";
       if(reserved && !generated) {try{await finish("failed",{code});}catch{logger.error("PW AI completion ledger unavailable",{requestId,code:"AI_DATABASE_ERROR"});}}

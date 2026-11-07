@@ -30,3 +30,33 @@ test("context includes only completed recent chat turns, stays bounded and never
   const limited=model.buildChatMessages([{status:"completed",question:"a".repeat(2000),answer:"b".repeat(12000)}],"c".repeat(2000));assert.ok(limited.reduce((sum,item)=>sum+item.content.length,0)<=6000);
   assert.throws(()=>model.buildChatMessages([]," "));assert.throws(()=>model.buildChatMessages([],"x".repeat(2001)));
 });
+
+test("note requests whitelist context fields and require a matching backend-provided source",async()=>{
+  const context={type:"note",noteId:"n1",version:"v1",action:"summarize",content:"DO NOT SEND BODY"};
+  let sent;
+  const service=client(async(_url,options)=>{sent=JSON.parse(options.body);return Response.json({requestId:"r1",reply:"Summary",quota,sources:[{type:"note",id:"n1",version:"v1",title:"Note"}]});});
+  const result=await service.sendChat({...input,context});assert.equal(result.sources[0].title,"Note");assert.equal(sent.context.content,undefined);assert.equal(sent.context.action,"summarize");
+  const legacy=client(async()=>Response.json({requestId:"r1",reply:"General answer",quota,sources:[]}));
+  await assert.rejects(legacy.sendChat({...input,context}),error=>error.code==="AI_NOTE_SETUP_REQUIRED");
+  const mismatch=client(async()=>Response.json({requestId:"r1",reply:"Wrong source",quota,sources:[{type:"note",id:"other",version:"v1",title:"Private"}]}));
+  await assert.rejects(mismatch.sendChat({...input,context}),error=>error.code==="AI_INVALID_RESPONSE");
+});
+
+test("real chat client and Edge handler complete the selected-note contract without new SQL",async()=>{
+  const {createChatHandler}=await import("../supabase/functions/ask-planwise/handler.mjs"),{webcrypto}=require("node:crypto");
+  const userId="00000000-0000-4000-8000-000000000001",noteId="00000000-0000-4000-8000-000000000002",version="2026-11-07T03:00:00.123456+00:00";
+  const env={SUPABASE_URL:"https://test.supabase.co",SUPABASE_ANON_KEY:"public-key",SUPABASE_SERVICE_ROLE_KEY:"server-key",CLOUDFLARE_ACCOUNT_ID:"a".repeat(32),CLOUDFLARE_API_TOKEN:"cf-key"};
+  let modelBody,removed=false,reservations=0;
+  const handler=createChatHandler({env:key=>env[key],cryptoImpl:webcrypto,logger:{warn(){},error(){}},fetchImpl:async(url,options)=>{
+    if(url.endsWith("/auth/v1/user"))return Response.json({id:userId});
+    if(new URL(url).pathname==="/rest/v1/notes")return Response.json(removed?[]:[{id:noteId,user_id:userId,title:"Meeting",content:"Prepare the slides.",checklist:[],updated_at:version}]);
+    if(url.endsWith("/reserve_ai_chat")){reservations++;return Response.json({state:"new",quota});}
+    if(url.endsWith("/finish_ai_chat"))return new Response(null,{status:204});
+    modelBody=JSON.parse(options.body);return Response.json({result:{response:"Prepare the slides."}});
+  }});
+  const service=client((url,options)=>handler(new Request(url,options)),userId);
+  const options={userId,requestId:require("node:crypto").randomUUID(),messages:[{role:"user",content:"What should I prepare?"}],context:{type:"note",noteId,version,action:"ask"}};
+  const result=await service.sendChat(options);assert.equal(result.reply,"Prepare the slides.");assert.equal(result.sources[0].version,version);
+  assert.equal(JSON.parse(modelBody.messages.at(-1).content).reference_note_data.content,"Prepare the slides.");
+  removed=true;await assert.rejects(service.sendChat({...options,requestId:require("node:crypto").randomUUID()}),error=>error.code==="AI_NOTE_UNAVAILABLE");assert.equal(reservations,1);
+});

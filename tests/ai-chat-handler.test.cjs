@@ -3,15 +3,16 @@ const A="00000000-0000-4000-8000-000000000001",quota={dailyLimit:20,dailyRemaini
 let api;test.before(async()=>{api=await import("../supabase/functions/ask-planwise/handler.mjs");});
 function fixture(){
   const env={SUPABASE_URL:"https://test.supabase.co",SUPABASE_ANON_KEY:"public-key",SUPABASE_SERVICE_ROLE_KEY:"private-service-key",CLOUDFLARE_ACCOUNT_ID:"a".repeat(32),CLOUDFLARE_API_TOKEN:"private-cloudflare-token"};
-  const calls=[],logs=[];let reserve={state:"new",quota},provider={result:{choices:[{message:{content:"你好！"}}],usage:{prompt_tokens:20,completion_tokens:3}},success:true},status=200,finishFails=false,authStatus=200,authUser={id:A},providerFetch;
+  const calls=[],logs=[];let reserve={state:"new",quota},provider={result:{choices:[{message:{content:"你好！"}}],usage:{prompt_tokens:20,completion_tokens:3}},success:true},status=200,finishFails=false,authStatus=200,authUser={id:A},providerFetch,noteRows=[],noteStatus=200;
   const handler=api.createChatHandler({env:key=>env[key],cryptoImpl:webcrypto,logger:{warn:(...value)=>logs.push(value),error:(...value)=>logs.push(value)},fetchImpl:async(url,options={})=>{
     calls.push({url,options,body:options.body?JSON.parse(options.body):null});
     if(url.endsWith("/auth/v1/user"))return Response.json(authUser,{status:authStatus});
+    if(new URL(url).pathname==="/rest/v1/notes")return Response.json(noteRows,{status:noteStatus});
     if(url.endsWith("/reserve_ai_chat"))return Response.json(reserve);
     if(url.endsWith("/finish_ai_chat")){if(finishFails)throw Error("private-service-key failure");return new Response(null,{status:204});}
     return providerFetch?providerFetch(options):Response.json(provider,{status});
   }});
-  return{handler,calls,logs,env,setReserve:value=>reserve=value,setProvider:(value,code=200)=>{provider=value;status=code;},setFinishFailure:()=>finishFails=true,setAuthStatus:value=>authStatus=value,setAuthUser:value=>authUser=value,setProviderFetch:value=>providerFetch=value};
+  return{handler,calls,logs,env,setReserve:value=>reserve=value,setProvider:(value,code=200)=>{provider=value;status=code;},setFinishFailure:()=>finishFails=true,setAuthStatus:value=>authStatus=value,setAuthUser:value=>authUser=value,setProviderFetch:value=>providerFetch=value,setNotes:(value,code=200)=>{noteRows=value;noteStatus=code;}};
 }
 const body=()=>({requestId:randomUUID(),messages:[{role:"user",content:"你好，请介绍你自己。"}]});
 const request=(data=body(),extra={})=>new Request("https://test.supabase.co/functions/v1/ask-planwise",{method:"POST",headers:{Authorization:"Bearer user-session-jwt","Content-Type":"application/json",Origin:"http://localhost:3000",...extra.headers},body:JSON.stringify(data),...extra});
@@ -60,4 +61,57 @@ test("client disconnection aborts inference, records failure and never leaves an
   const f=fixture(),controller=new AbortController();let started;const ready=new Promise(resolve=>started=resolve);
   f.setProviderFetch(options=>new Promise((_resolve,reject)=>{options.signal.addEventListener("abort",()=>reject(Error("aborted")));started();}));
   const pending=f.handler(request(body(),{signal:controller.signal}));await ready;controller.abort();const response=await pending,data=await response.json();assert.equal(data.code,"AI_TIMEOUT");assert.equal(response.status,504);assert.equal(f.calls.at(-1).body.p_status,"failed");
+});
+
+const NOTE="00000000-0000-4000-8000-000000000002",VERSION="2026-11-07T03:00:00.123456+00:00";
+const noteRow=(extra={})=>({id:NOTE,user_id:A,title:"Project meeting",content:"Prepare slides before Friday.",checklist:[{id:"c",text:"Contact the team",done:true}],updated_at:VERSION,...extra});
+const noteInput=(extra={})=>({...body(),context:{type:"note",noteId:NOTE,version:VERSION,action:"ask",...extra}});
+test("selected notes are read with user RLS, server ownership/version checks, and trusted source metadata",async()=>{
+  const f=fixture();f.setNotes([noteRow()]);const response=await f.handler(request(noteInput())),data=await response.json();
+  assert.equal(response.status,200);assert.deepEqual(data.sources,[{type:"note",id:NOTE,title:"Project meeting",version:VERSION}]);
+  const read=f.calls.find(call=>new URL(call.url).pathname==="/rest/v1/notes"),url=new URL(read.url);
+  assert.equal(read.options.headers.Authorization,"Bearer user-session-jwt");assert.equal(read.options.headers.apikey,"public-key");
+  assert.equal(url.searchParams.get("id"),"eq."+NOTE);assert.equal(url.searchParams.get("user_id"),"eq."+A);assert.equal(read.options.method,undefined);
+  const call=f.calls.find(call=>call.url.startsWith("https://api.cloudflare.com"));assert.equal(call.body.max_completion_tokens,1024);
+  assert.match(call.body.messages[0].content,/untrusted data/);const final=JSON.parse(call.body.messages.at(-1).content);
+  assert.equal(final.reference_note_data.content,"Prepare slides before Friday.");assert.equal(final.reference_note_data.checklist[0].done,true);
+  assert.equal(JSON.stringify(call.body).includes("private-service-key"),false);
+});
+test("malformed note contexts, inaccessible notes, changed microsecond versions and invalid contents never reserve quota",async()=>{
+  for(const context of [{noteId:"wrong"},{action:"delete"},{version:{}},{content:"client-injected text"}]){
+    const f=fixture();f.setNotes([noteRow()]);const response=await f.handler(request(noteInput(context)));assert.equal(response.status,400);assert.equal(f.calls.length,1);
+  }
+  for(const [rows,version,expected] of [
+    [[],VERSION,"AI_NOTE_UNAVAILABLE"],[[noteRow({user_id:NOTE})],VERSION,"AI_NOTE_UNAVAILABLE"],
+    [[noteRow()],"2026-11-07T03:00:00.123457+00:00","AI_NOTE_CHANGED"],
+    [[noteRow({content:"",checklist:[]})],VERSION,"AI_NOTE_EMPTY"],
+    [[noteRow({content:"中".repeat(12001)})],VERSION,"AI_NOTE_TOO_LONG"],
+    [[noteRow({content:"planwise-richtext:v1:{bad json"})],VERSION,"AI_NOTE_CONTENT_INVALID"],
+  ]){
+    const f=fixture();f.setNotes(rows);const data=await(await f.handler(request(noteInput({version})))).json();assert.equal(data.code,expected);
+    assert.equal(f.calls.some(call=>call.url.endsWith("/reserve_ai_chat")||call.url.startsWith("https://api.cloudflare.com")),false);
+    assert.equal(f.logs.some(item=>JSON.stringify(item).includes("Prepare slides")),false);
+  }
+});
+test("note retry cache reconstructs its authorized source and cannot be read after the note is removed",async()=>{
+  const f=fixture();f.setNotes([noteRow()]);f.setReserve({state:"cached",reply:"Cached note answer",quota});
+  let data=await(await f.handler(request(noteInput()))).json();assert.equal(data.cached,true);assert.equal(data.sources[0].id,NOTE);
+  assert.equal(f.calls.some(call=>call.url.startsWith("https://api.cloudflare.com")),false);
+  f.setNotes([]);data=await(await f.handler(request(noteInput()))).json();assert.equal(data.code,"AI_NOTE_UNAVAILABLE");
+});
+test("note fingerprints bind action and saved contents; ordinary chat never reads notes",async()=>{
+  const hashes=[];
+  for(const [action,content] of [["ask","Original"],["summarize","Original"],["ask","Updated"]]){
+    const f=fixture();f.setNotes([noteRow({content})]);await f.handler(request(noteInput({action})));
+    hashes.push(f.calls.find(call=>call.url.endsWith("/reserve_ai_chat")).body.p_request_hash);
+  }
+  assert.equal(new Set(hashes).size,3);
+  const f=fixture();await f.handler(request());assert.equal(f.calls.some(call=>new URL(call.url).pathname==="/rest/v1/notes"),false);
+});
+test("rich-text reference preserves list numbering, nesting and literal text without executing HTML",async()=>{
+  const {notePlainText}=await import("../supabase/functions/ask-planwise/note-context.mjs");
+  const paragraph=text=>({type:"paragraph",content:[{type:"text",text,marks:[{type:"bold"}]}]});
+  const document={type:"doc",content:[paragraph("Meeting"),{type:"orderedList",attrs:{start:3},content:[{type:"listItem",content:[paragraph("Slides"),{type:"bulletList",content:[{type:"listItem",content:[paragraph("Charts")]}]}]},{type:"listItem",content:[paragraph("Demo")]}]}]};
+  assert.match(notePlainText("planwise-richtext:v1:"+JSON.stringify(document)),/3\. Slides\n  - Charts\n4\. Demo/);
+  assert.equal(notePlainText("<script>literal text</script>"),"<script>literal text</script>");
 });

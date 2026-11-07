@@ -48,6 +48,22 @@ export const getNotes = async (userId) => {
 };
 
 const noteError = (code) => Object.assign(new Error(code), { code });
+
+// A read-only picker: fetch titles/IDs, without downloading note content.
+export const getNoteChoices = async (userId) => {
+  if (!userId) throw noteError("NOTE_AUTH_REQUIRED");
+  const choices = [];
+  const pageSize = 200;
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase.from("notes").select("id,title,updated_at")
+      .eq("user_id", userId).order("updated_at", { ascending: false })
+      .order("id", { ascending: true }).range(offset, offset + pageSize - 1);
+    if (error) throw error;
+    choices.push(...(data || []).map((note) => ({ id: note.id, title: note.title || "", updatedAt: note.updated_at, saved: true })));
+    if (!data || data.length < pageSize) return choices;
+  }
+};
+
 const editableContent = (note) => {
   if (!note.title.trim()) throw noteError("NOTE_TITLE_REQUIRED");
   return { title: note.title.trim(), content: note.body ?? "" };

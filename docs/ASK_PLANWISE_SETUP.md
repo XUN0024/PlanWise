@@ -12,7 +12,53 @@
 - [x] 2026-11-07 用户截图确认 ask-planwise 部署成功，目标为 PlanWise_new / lfvlxzjspvfxbnkdunay；此前 CLI 403 部署阻断已排除。
 - [x] 2026-11-07 用户确认普通聊天可以回复，前端 → Edge Function → Cloudflare 的真实调用已跑通。
 - [ ] 线上 SQL 权限查询、中文回答质量、延迟、Neurons 用量与限流仍需分别验收。
-- [ ] 当前笔记助手、业务查询、RAG、来源引用、操作预览确认、Groq 故障切换。
+- [x] 笔记助手前端：自动识别 Notes 当前查看/编辑的笔记，可更换/搜索笔记，准备问题或总结草稿，中英文与未保存状态提示。
+- [x] 笔记助手总结/问答代码：按当前用户权限读取指定笔记，检查版本、转换富文本和清单、显示来源；自动保存后再发送，隔离每篇笔记/版本的对话。
+- [ ] 最新笔记助手函数部署及真实账号线上验收；待办提取另行实施。
+- [ ] 业务查询、RAG、来源引用、操作预览确认、Groq 故障切换。
+
+## 笔记助手总结与问答（2026-11-07）
+
+Notes 将当前笔记的 ID、标题、版本和保存状态共享给 PW AI，不共享正文。打开 PW AI 自动显示当前笔记；新建草稿和未保存标题也会同步。
+用户可更换为另一篇笔记，在同一个页面笔记上下文中保留手动选择；页面打开另一篇笔记时，默认跟随新笔记。
+没有当前笔记时显示选择入口。选择器优先使用 Notes 已加载的列表；其他页面按当前用户只读获取笔记 ID/标题/更新时间，支持搜索、空列表、加载失败和重试。
+普通聊天和每篇笔记/已保存版本的对话分别保存在内存，不写入 localStorage；退出或切换账号后清空。离开 Notes 后不会继续自动引用上一页笔记。
+“提问”聚焦输入框，“总结”填入可编辑的问题，再按发送。当前笔记未保存时等待现有 800ms 自动保存完成（最多等待 15 秒），失败保留问题，不调用模型；其他笔记直接使用其已保存版本。
+前端请求只增加 context: {type:"note", noteId, version, action:"ask"|"summarize"}，不上传正文。Edge Function 使用用户 JWT + Supabase 公钥，通过 notes RLS 及显式 user_id/id 条件读取，额度 RPC 继续使用服务端凭据。
+服务端保留 Postgres 微秒精度原始 updated_at 进行严格版本比较，再转换正文的已知富文本节点，保留列表、换行和清单完成状态。标题/正文/清单文字合计最多 12,000 个 Unicode 字符，空正文和空清单拒绝；附件不读取。
+笔记作为不可信资料放入用户消息，服务端 system 规则明确区分资料与指令。普通聊天输出上限保持 512 tokens，笔记模式为 1024；复用现有请求数额度及重复请求保护。
+本轮不新增 SQL：notes 和 AI 额度表保持原状，来源由服务端从授权笔记构造。指纹包含笔记 ID/版本、操作类型和实际内容。重试先重新检查权限和版本，再复用现有 reply 缓存并重建来源；笔记删除、权限失效或版本变化后不返回旧缓存。
+回答中的来源跳转 /notes?note=<id>；目标笔记仍按当前账号读取，切换前保留原有未保存修改确认。页面另存新版本后，旧版对话不作为新问题的历史。
+
+### 启用本轮功能
+
+已运行原有 AI SQL 且 Notes 正常工作的项目，不需要重跑 SQL，也不需要新 Secrets。更新前端并重新部署函数：
+
+```powershell
+cd C:\Users\jiaxu\PlanWise
+npx.cmd supabase@latest functions deploy ask-planwise --use-api --remote=lfvlxzjspvfxbnkdunay
+```
+
+部署后用一篇自己的笔记测试：总结、已知内容问答、未提及的问题、来源跳转；编辑后立即发送，确认等待保存并使用最新内容。
+再验证笔记切换、版本变化、保存失败、删除、两个账号数据隔离、重试无重复调用。当前笔记超过长度上限时明确提示，不静默截断。
+若收到 AI_NOTE_SETUP_REQUIRED，说明客户端没有收到匹配的笔记来源；旧版函数会忽略 context，必须先部署新版，不能将普通聊天回复展示为笔记答案。
+
+本地验证：211 项测试通过，生产构建通过（保留原有 4 项警告）。包括真实 chatService 与 Edge handler 的无网络串联测试、用户权限、微秒版本、列表转换、缓存来源、自动保存等待和笔记对话隔离；不代表已完成线上模型质量验收。
+
+本轮部署记录：2026-11-07 已尝试向 PlanWise_new / lfvlxzjspvfxbnkdunay 部署当前三个文件，Supabase 部署接口返回 403，未部署成功。随后只读 projects list 的结果中没有目标项目，仅有旧账号/授权范围下的其他项目；当前进程和用户级 SUPABASE_ACCESS_TOKEN 均未设置（仅检查存在性，没有读取凭据内容）。
+需要在用户终端登录拥有目标项目权限的 Supabase 账号，再确认 projects list 包含上述 ID 后重新部署。没有执行线上 SQL，没有修改 Cloudflare Secrets。
+
+### 入口文件找不到（400 / Entrypoint path does not exist）
+
+若先出现 `failed to read file: open supabase/functions/ask-planwise/index.ts: no such file or directory`，说明 CLI 没能读取本地入口；随后服务器的 `/tmp/...` 入口报错是未上传入口文件的后续结果。
+2026-11-07 已检查当前工作区：config.toml、index.ts、handler.mjs、note-context.mjs 均存在，配置 entrypoint 与官方相对路径格式一致。截图本身没有给出当前执行目录，不能据此断定文件被删除。
+先在用户 PowerShell 执行 `Test-Path 'C:\Users\jiaxu\PlanWise\supabase\functions\ask-planwise\index.ts'`，应为 True；再使用绝对工作目录，避免当前目录或父级配置查找影响：
+
+```powershell
+npx.cmd supabase@latest --workdir "C:\Users\jiaxu\PlanWise" functions deploy ask-planwise --use-api --remote=lfvlxzjspvfxbnkdunay
+```
+
+检查三个文件均有 Uploading asset 记录，并以 Deployed Functions 成功行作为部署完成依据。若绝对 Test-Path 为 False，先核对终端是否使用了同一台机器/项目副本，不能用空入口文件覆盖现有代码。此次错误不需要重跑 SQL 或更改 Cloudflare Secrets。
 
 ## 现在如何上线并测试
 
@@ -45,8 +91,9 @@ CLI 3 使用 `--remote=<ref>` 指定项目；`--project-ref` 当前仍可用，�
 
 - `index.ts`：[入口](../supabase/functions/ask-planwise/index.ts)
 - `handler.mjs`：[处理器](../supabase/functions/ask-planwise/handler.mjs)
+- `note-context.mjs`：[笔记解析与上下文](../supabase/functions/ask-planwise/note-context.mjs)
 
-两个文件放在同一级；不要只复制 index.ts 而遗漏它导入的处理器。
+三个文件放在同一级；不要只复制 index.ts 而遗漏其依赖文件。
 
 ### 3. 核对服务端环境变量
 
@@ -91,7 +138,7 @@ http://localhost:3000,http://127.0.0.1:3000,null,https://your-app.example
 |---|---|
 | 身份 | PW AI，PlanWise 中的个人效率 AI 助手 |
 | 表达方式 | 专业、友善、直接，跟随用户语言，先重点后解释 |
-| 当前能力 | 根据聊天文字整理想法、拆解目标、规划下一步；普通对话范围 |
+| 当前能力 | 普通聊天基于对话；笔记模式可总结和问答一篇服务端授权提供的笔记，不读取附件或其他模块 |
 | 回答边界 | 不编造个人资料或来源，不声称已读资料库或执行应用操作；被问模型时如实说明 |
 
 修改身份名称、主要职责或语气时，编辑该常量对应段落，保留反引号语法及其余处理代码。
@@ -147,7 +194,7 @@ UPDATE public.ai_chat_settings SET enabled=false WHERE id=1;
 
 ## 数据、缓存和重试
 
-- 第一版只发送聊天文本，没有查询或写入 notes、tasks、expenses、Storage，sources/actions 为空。
+- 普通聊天只发送对话，不查询业务记录。笔记模式只读一篇授权笔记，sources 为服务端生成的笔记来源；不写 notes/tasks/expenses/Storage，actions 仍为空。
 - 聊天状态在 React 全局组件内存中；关闭面板或路由切换保留，刷新、退出或换账号清空。
 - 为避免重复付费调用，服务端记录用户/请求 UUID、SHA-256 指纹、状态、token 用量、耗时和短回复缓存；不存整段输入会话。
 - 原请求重试若已成功则复用缓存；进行中不发起第二次推理；明确失败后允许用户再次重试创建新请求 ID。
@@ -175,7 +222,7 @@ npx.cmd supabase@latest projects list
 
 - 看不到 `lfvlxzjspvfxbnkdunay`：核对 Dashboard 项目引用、CLI 登录账号和 Token 允许访问的项目范围。
 - 能看到但部署 403：核对 Supabase PAT 的 Edge Functions Read-write 权限，以及成员在该项目的函数管理权限。
-- 账号和权限均确认正确但 CLI 仍失败：可使用同一账号在 Dashboard 的 Edge Functions 编辑器部署这两个文件，以区分 CLI 凭据/调用问题与项目权限问题。
+- 账号和权限均确认正确但 CLI 仍失败：可使用同一账号在 Dashboard 的 Edge Functions 编辑器部署当前三个文件，以区分 CLI 凭据/调用问题与项目权限问题。
 
 `supabase login` 的浏览器登录使用 Supabase 管理账号。它与 PlanWise Google 登录、Cloudflare API Token 都不同。
 如需更换 CLI 账号，可执行 logout 后重新 login，并在浏览器选择能管理该项目的 Supabase 账号。

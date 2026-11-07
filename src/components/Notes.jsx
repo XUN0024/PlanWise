@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { noteAssistantChoice, useNoteAssistant } from "../contexts/NoteAssistantContext";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import LanguageSwitcher from "./LanguageSwitcher";
 import NotesSidebar from "./NotesSidebar";
 import NoteEditor from "./NoteEditor";
@@ -30,8 +31,11 @@ export const filterNotes = (notes, query, selectedTagId = null) => {
 
 export default function Notes() {
   const { user, signOut } = useAuth();
+  const { publish: publishAssistantNote, clear: clearAssistantNote } = useNoteAssistant();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
+  const handledSourceLink = useRef(null);
   const [snapshot, setSnapshot] = useState({ userId: null, notes: [], loading: true, error: null });
   const [selectedId, setSelectedId] = useState(null);
   const [search, setSearch] = useState("");
@@ -127,6 +131,15 @@ export default function Notes() {
   const menuNote = contextMenu?.userId === user?.id
     ? notes.find((note) => note.id === contextMenu?.id) : null;
   const dirty = !!draft && (draft.title !== activeEditor.base.title || draft.body !== activeEditor.base.body);
+  const assistantChoices = useMemo(() => notes.map((note) => noteAssistantChoice(note)), [notes]);
+  const assistantCurrentNote = useMemo(() => draft
+    ? noteAssistantChoice(draft, { saved: !activeEditor.isNew, dirty,
+      saving: busy && operation.current?.kind === "content", saveError: !!writeError })
+    : noteAssistantChoice(selectedNote), [draft, activeEditor?.isNew, dirty, busy, writeError, selectedNote]);
+  useEffect(() => {
+    publishAssistantNote({ userId: user?.id, notes: assistantChoices, currentNote: assistantCurrentNote, loading, error: !!error });
+  }, [publishAssistantNote, user?.id, assistantChoices, assistantCurrentNote, loading, error]);
+  useEffect(() => () => clearAssistantNote(user?.id), [clearAssistantNote, user?.id]);
   useEffect(() => {
     if ((!dirty && !busy && !attachmentActivity && !tagBusy) || typeof window === "undefined") return;
     const warn = (event) => { event.preventDefault(); event.returnValue = ""; };
@@ -147,8 +160,9 @@ export default function Notes() {
       setSelectedTagId(null);
       setSelectedId(null);
       setEditor({ userId: user.id, draft: note, base: { ...note }, isNew: true });
-    } else if (action.type === "select") {
+    } else if (action.type === "select" || action.type === "openSource") {
       setSelectedId(action.id);
+      if(action.type === "openSource"){setSearch("");setSelectedTagId(null);}
     } else if (action.type === "edit" || action.type === "delete") {
       const target = notes.find((note) => note.id === action.id);
       if (!target) return;
@@ -173,10 +187,19 @@ export default function Notes() {
   };
   const request = (action) => {
     if (operation.current || tagOperation.current || attachmentsBusy.current || loading || !user?.id) return;
-    if (["select", "edit"].includes(action.type) && draft?.id === action.id) return;
+    if (["select", "edit", "openSource"].includes(action.type) && draft?.id === action.id) return;
     if (dirty) setPendingAction({ userId: user.id, ...action });
     else perform(action);
   };
+  useEffect(() => {
+    if (loading || error || busy || tagBusy || attachmentActivity || !user?.id) return;
+    const noteId = new URLSearchParams(location.search || "").get("note");
+    const linkKey = user.id + ":" + (location.key || "") + ":" + (noteId || "");
+    if (!noteId || handledSourceLink.current === linkKey) return;
+    handledSourceLink.current = linkKey;
+    if (notes.some(note => note.id === noteId)) request({type:"openSource",id:noteId});
+    else setWriteError("askPlanwise.errors.AI_NOTE_UNAVAILABLE");
+  }, [location.search,location.key,user?.id,loading,error,busy,tagBusy,attachmentActivity,notes]);
   const handleSignOut = () => request({ type: "signOut" });
   const handleHeaderClick = (event) => {
     if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;

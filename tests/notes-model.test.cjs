@@ -16,7 +16,7 @@ function load(file, imports, globals = {}) {
   const module = { exports: {} };
   vm.runInNewContext(code, {
     module, exports: module.exports,
-    crypto: require("node:crypto").webcrypto,
+    crypto: require("node:crypto").webcrypto, URLSearchParams,
     ...globals,
     require(name) {
       if (name === "../lib/noteColors") return load("src/lib/noteColors.jsx", {});
@@ -111,8 +111,35 @@ test("sidebar never renders fake notes, pinned entries or tags for an empty acco
   assert.match(populated, /#real-tag/);
 });
 
+test("assistant picker reads only the current user's note metadata and includes later pages", async () => {
+  let fail = false;
+  const calls = [], firstPage = Array.from({length:200},(_,index)=>({id:String(index),title:"Note "+index,updated_at:"version"}));
+  const query = {
+    select(value){calls.push(["select",value]);return this;},
+    eq(...args){calls.push(["eq",...args]);return this;},
+    order(){return this;},
+    range(from,to){calls.push(["range",from,to]);return Promise.resolve({data:from===0?firstPage:[{id:"last",title:"Last note",updated_at:"version"}],error:fail?Error("Offline"):null});},
+  };
+  const service=load("src/services/noteService.jsx",{"../lib/supabase":{supabase:{from:()=>query}}});
+  const choices=await service.getNoteChoices("user-a");
+  assert.equal(choices.length,201);assert.equal(choices[200].title,"Last note");
+  assert.deepEqual(calls.filter(([key])=>key==="range"),[["range",0,199],["range",200,399]]);
+  for(const call of calls.filter(([key])=>key==="eq"))assert.deepEqual(call,["eq","user_id","user-a"]);
+  for(const call of calls.filter(([key])=>key==="select"))assert.deepEqual(call,["select","id,title,updated_at"]);
+  await assert.rejects(service.getNoteChoices(null),{code:"NOTE_AUTH_REQUIRED"});
+  fail=true;await assert.rejects(service.getNoteChoices("user-a"),/Offline/);
+});
+
 // A minimal hook runner exercises the actual page load, selection and retry logic.
 function page(getNotes, overrides = {}) {
+  let pageLocation = { search:"", key:"initial" };
+  let assistantSource = null;
+  const { noteAssistantChoice } = load("src/contexts/NoteAssistantContext.jsx", { react: React });
+  const assistantContext = { noteAssistantChoice, useNoteAssistant: () => ({
+    publish: publishAssistant, clear: clearAssistant,
+  }) };
+  function publishAssistant(value) { assistantSource = value; }
+  function clearAssistant(userId) { if (assistantSource?.userId === userId) assistantSource = null; }
   let user = { id: "user-a", email: "a@example.com" };
   let clock = 0, timerId = 0;
   const timers = new Map();
@@ -141,7 +168,8 @@ function page(getNotes, overrides = {}) {
   const exports = load("src/components/Notes.jsx", {
     react, "react-i18next": translation,
     "../contexts/AuthContext": { useAuth: () => ({ user, signOut() {} }) },
-    "react-router-dom": { Link: "a", useNavigate: () => () => {} },
+    "../contexts/NoteAssistantContext": assistantContext,
+    "react-router-dom": { Link: "a", useNavigate: () => () => {}, useLocation: () => pageLocation },
     "./LanguageSwitcher": { __esModule: true, default: "language" },
     "./NotesSidebar": { __esModule: true, default: "sidebar" },
     "./NoteEditor": { __esModule: true, default: "editor" },
@@ -187,6 +215,8 @@ function page(getNotes, overrides = {}) {
     } while (dirty);
   };
   return {
+    openSource(id) { pageLocation = {search:"?note="+encodeURIComponent(id),key:String(Math.random())};render(); },
+    assistantSource: () => assistantSource,
     render,
     advance(ms) {
       clock += ms;
@@ -261,6 +291,29 @@ const sampleNote = () => ({
   id: "note-a", title: "Original title", body: "Original body", tags: ["work"],
   points: [], pinned: false, starred: false, color: "#F59E0B",
   updatedAt: "2026-11-03T02:00:00Z",
+});
+
+test("Notes publishes only current note metadata, follows draft edits and clears it on unmount", async () => {
+  const app = page(async () => [sampleNote()]);app.render();await app.flush();
+  assert.equal(app.assistantSource().currentNote, null);
+  assert.equal(Object.hasOwn(app.assistantSource().notes[0], "body"), false);
+  app.sidebar().onSelect("note-a");app.render();
+  assert.equal(app.assistantSource().currentNote.title, "Original title");
+  app.button("notesPanel.edit").props.onClick();app.render();
+  app.editor().onChange({title:"Live draft title",body:"Private draft content"});app.render();
+  assert.equal(app.assistantSource().currentNote.title,"Live draft title");
+  assert.equal(app.assistantSource().currentNote.dirty,true);
+  assert.doesNotMatch(JSON.stringify(app.assistantSource()),/Original body|Private draft content/);
+  app.unmount();assert.equal(app.assistantSource(),null);
+});
+
+test("AI source links select the actual note and preserve unsaved-edit confirmation",async()=>{
+  const app=page(async()=>[sampleNote(),{...sampleNote(),id:"note-b",title:"Second note"}]);app.render();await app.flush();
+  app.sidebar().onSearchChange("missing");app.render();app.openSource("note-a");assert.equal(app.sidebar().selectedId,"note-a");assert.equal(app.sidebar().search,"");
+  app.button("notesPanel.edit").props.onClick();app.render();app.editor().onChange({body:"Unsaved content"});app.render();
+  app.openSource("note-b");assert.equal(app.editor().draft.body,"Unsaved content");assert.equal(app.sidebar().selectedId,"note-a");
+  assert.match(app.text(),/notesPanel.discardTitle/);
+  app.button("notesPanel.discard").props.onClick();app.render();assert.equal(app.sidebar().selectedId,"note-b");app.unmount();
 });
 const submit = { preventDefault() {} };
 const deferred = () => {

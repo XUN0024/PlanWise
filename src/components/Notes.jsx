@@ -441,6 +441,7 @@ export default function Notes() {
           busy={busy || tagBusy || attachmentActivity || !!activeDelete || (!!pendingAction && pendingAction.userId === user?.id)}
           search={search} onSearchChange={setSearch} loading={loading} error={!!error} />
         <main className="flex-1 min-w-0 py-6">
+          {assistantCurrentNote&&<button type="button" disabled={!!activeDelete||!!pendingAction} onClick={()=>window.dispatchEvent(new CustomEvent("planwise:ask",{detail:{userId:user.id,title:assistantCurrentNote.title,reference:{type:"note",id:assistantCurrentNote.id,version:assistantCurrentNote.updatedAt||"1970-01-01T00:00:00Z"}}}))} className="mb-3 rounded-lg border border-violet-200 px-3 py-2 text-sm text-violet-700">{t("askPlanwise.unified.ask")}</button>}
           <NoteAttachments key={user?.id + ":" + (draft?.id || selectedNote?.id || "")}
             userId={user?.id} noteId={draft?.id || selectedNote?.id}
             saved={draft ? !activeEditor.isNew : !!selectedNote}

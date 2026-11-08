@@ -1,15 +1,19 @@
 # PW AI 支出助手第一版
 
+2026-11-08 后续更新：单月限制已扩展为日期范围、多月趋势和可选期间对比；英文 January 2026 会解析为正确的 1 月。当前上线与验收以 [支出范围修复](./EXPENSE_RANGE_SETUP.md) 为准，下方保留首版历史实现。
+
+2026-11-08 更新：界面已并入 [统一聊天与参考范围](./UNIFIED_AI_SETUP.md)，独立 Tab 已移除。月份和条件位于“＋参考 → 我的支出”，统计卡片作为回答出现。下方保留底层统计、权限和历史验收说明。
+
 更新：2026-11-07（Asia/Kuala_Lumpur）。本轮按用户要求先新增独立 Expenses Assistant Tab，之后再与笔记、任务统一聊天入口。
 
 ## 范围与当前状态
 
-- 已实现代码：普通对话 / 笔记助手 / 支出助手三个 Tab；在 Expenses 页面打开 PW AI 默认进入支出助手。
+- 已实现代码：普通对话 / 笔记助手 / 支出助手；2026-11-08 另新增独立 [任务助手](./TASKS_ASSISTANT_SETUP.md) Tab。在 Expenses 页面打开 PW AI 默认进入支出助手。
 - 消费回顾：完整匹配范围的总额、笔数、均值、日历日均、分类占比、小额累计、按规范化描述的高频分组、每日/星期分布和代表性大额记录。
 - 期间变化：总差额、增长率、每个分类的正负差额与两期大额记录。精确数据先显示为卡片，模型负责解释。
 - 可选择月份、分类、描述关键词、小额标准；首版小额默认单笔 ≤ RM 20，可设 RM 0.01–10,000.00。
 - 支出新增、修改或删除后，新请求读取新快照。报告指纹涵盖两期全部匹配记录的 ID/版本，避免只用 max(updated_at) 漏掉删除。
-- 待完成：线上 SQL、Edge Function 部署及真实账号/模型验收；疑似重复、周期性支出、OCR、Tasks Assistant、统一 RAG 入口仍待实施。
+- 待完成：线上 SQL、Edge Function 部署及真实账号/模型验收；疑似重复、周期性支出、OCR、统一 RAG 入口仍待实施。Tasks Assistant 第一版代码见独立说明。
 
 ## 上线步骤
 
@@ -23,7 +27,7 @@
 npx.cmd supabase@latest --workdir "C:\Users\jiaxu\PlanWise" functions deploy ask-planwise --use-api --remote=lfvlxzjspvfxbnkdunay
 ```
 
-无需新增 Cloudflare Secrets。保留 verify_jwt=true，当前账号需有 PlanWise_new 部署权限。如果手动通过 Dashboard 部署，需要同目录的五个文件：index.ts、handler.mjs、note-context.mjs、expense-context.mjs、expense-report.mjs；不能遗漏导入依赖。
+无需新增 Cloudflare Secrets。保留 verify_jwt=true，当前账号需有 PlanWise_new 部署权限。如果手动通过 Dashboard 部署，当前需要同目录的七个文件：index.ts、handler.mjs、note-context.mjs、expense-context.mjs、expense-report.mjs、task-context.mjs、task-report.mjs；不能遗漏导入依赖。
 
 4. 更新/刷新前端，打开 PW AI → 支出助手。选择月份后点击“分析本月消费/分析所选月份”或“解释期间变化”；也可在该范围内继续提问。快捷按钮直接发送一次分析，不需要再次点击发送。
 

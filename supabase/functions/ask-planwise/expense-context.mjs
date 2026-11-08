@@ -47,7 +47,7 @@ export function expenseMessages(messages,report,action) {
     }return out;
   };
   return messages.map((message,index)=>index!==messages.length-1?message:{role:"user",content:JSON.stringify({
-    task:action==="compare"?"Explain the period-to-period changes":"Review recorded spending habits",question:message.content,verified_expense_report:display(report),
+    task:action==="compare"?"Explain the period-to-period changes":action==="trend"?"Explain the date-range spending trend":action==="count"?"Report the exact count for the queried dates":"Review recorded spending habits",question:message.content,verified_expense_report:display(report),
   })});
 }
 export function expenseSources(report) {

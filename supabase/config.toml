@@ -3,3 +3,8 @@ project_id = "planwise"
 [functions.ask-planwise]
 verify_jwt = true
 entrypoint = "./functions/ask-planwise/index.ts"
+
+[functions.index-workspace]
+# Authenticated by a dedicated server-only worker secret; NOT a public worker.
+verify_jwt = false
+entrypoint = "./functions/index-workspace/index.ts"

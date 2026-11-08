@@ -1,5 +1,31 @@
 import { supabase } from "../lib/supabase";
 
+async function requireTaskUser(userId) {
+  const {data,error}=await supabase.auth.getSession();
+  if(error||!userId||data?.session?.user?.id!==userId)throw Object.assign(new Error("AI_AUTH_REQUIRED"),{code:"AI_AUTH_REQUIRED"});
+}
+
+// A small, searchable catalog for choosing context; task contents are fetched by the server.
+export async function getTaskChoices(userId,search="",signal) {
+  await requireTaskUser(userId);
+  const literal=search.trim().slice(0,200).replace(/[\\%_]/g,"\\$&");
+  let query=supabase.from("tasks").select("id,title,priority,is_completed,reminder_date").eq("user_id",userId)
+    .order("is_completed",{ascending:true}).order("created_at",{ascending:false}).order("id",{ascending:true}).limit(31);
+  if(literal)query=query.ilike("title","%"+literal+"%");
+  if(signal)query=query.abortSignal(signal);
+  const {data,error}=await query;if(error)throw error;
+  return{tasks:(data||[]).slice(0,30),hasMore:(data||[]).length>30};
+}
+
+export async function getTaskById(id,userId) {
+  await requireTaskUser(userId);
+  if(!/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(id||""))throw new Error("Task unavailable");
+  const {data,error}=await supabase.from("tasks").select("*,subtasks(*)").eq("id",id).eq("user_id",userId).maybeSingle();
+  if(error)throw error;
+  if(!data)throw Object.assign(new Error("Task unavailable"),{code:"AI_TASK_UNAVAILABLE"});
+  return data;
+}
+
 //Get all tasks from the user (RLS handles user filtering automatically)
 export const getTasks = async () => {
   try {

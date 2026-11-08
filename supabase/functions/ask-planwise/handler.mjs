@@ -1,5 +1,9 @@
 import { validateNoteContext, prepareNote, NOTE_SYSTEM, noteMessages } from "./note-context.mjs";
 import { validateExpenseContext, readExpenseReport, EXPENSE_SYSTEM, expenseMessages, expenseSources } from "./expense-context.mjs";
+import { validateTaskContext, taskSources } from "./task-report.mjs";
+import { readTaskReport, TASK_SYSTEM, taskMessages } from "./task-context.mjs";
+import { validateWorkspaceContext } from "./workspace-report.mjs";
+import { prepareWorkspace, guardWorkspaceReply } from "./workspace-context.mjs";
 export const MODEL = "@cf/zai-org/glm-4.7-flash";
 // Global assistant identity. Keep personal user preferences out of this shared prompt.
 // Editing this constant requires redeploying ask-planwise; no SQL or Secret changes.
@@ -17,7 +21,9 @@ When information is missing, state what is uncertain and ask only the most essen
 In general chat, base your answers solely on the supplied conversation; you cannot read the user's records.
 In selected-note mode, the server supplies one authorized note for summaries and questions. You can use only that provided note, not the rest of the user's library.
 In expenses mode, the server supplies an authorized, exact database report for spending review and period comparison.
-Tasks, attachments and internet search are not connected. You cannot create, modify, or delete application records.
+In tasks mode, the server supplies authorized task facts for today's focus suggestions and selected-task breakdown previews.
+In unified workspace mode, the server supplies authorized results for the selected or automatically chosen reference sources. Use only those supplied results.
+Attachments and internet search are not connected. You cannot create, modify, or delete application records.
 Users may provide text in the chat for you to summarize, organize, or turn into a plan. This does not mean you have accessed the application's database.
 
 [Response Boundaries]
@@ -39,7 +45,7 @@ export function validateChat(body) {
     return{role:item.role,content};
   });
   if(size>6000) throw fail("AI_INPUT_INVALID",400);
-  return{requestId:body.requestId,messages,context:body.context?.type==="expenses"?validateExpenseContext(body.context):validateNoteContext(body.context)};
+  return{requestId:body.requestId,messages,context:body.context?.type==="workspace"?validateWorkspaceContext(body.context):body.context?.type==="tasks"?validateTaskContext(body.context):body.context?.type==="expenses"?validateExpenseContext(body.context):validateNoteContext(body.context)};
 }
 async function readJson(response,limit) {
   const reader=response.body?.getReader();if(!reader) throw fail("AI_INVALID_RESPONSE",502);
@@ -112,39 +118,54 @@ export function createChatHandler({env,fetchImpl=fetch,cryptoImpl=crypto,now=()=
         if (!Array.isArray(rows) || rows.length !== 1) throw fail("AI_NOTE_UNAVAILABLE", 404);
         selectedNote = prepareNote(rows[0], input.context, userId);
       }
-      const expenseReport=input.context?.type==="expenses"?await readExpenseReport({context:input.context,userId,url,authorization,publicKey,fetchImpl,readJson,now}):null;
-      const sources = selectedNote ? [selectedNote.source] : expenseReport ? expenseSources(expenseReport) : [];
-      const system = SYSTEM + (selectedNote ? "\n\n" + NOTE_SYSTEM : expenseReport ? "\n\n" + EXPENSE_SYSTEM : "");
+      const expenseReport=input.context?.type==="expenses"?await readExpenseReport({context:input.context,userId,url,authorization,publicKey,serverKey,env,fetchImpl,readJson,now}):null;
+      const taskReport=input.context?.type==="tasks"?await readTaskReport({context:input.context,userId,url,authorization,publicKey,serverKey,env,fetchImpl,readJson,now}):null;
+      const unified=input.context?.type==="workspace"?await prepareWorkspace({context:input.context,messages:input.messages,userId,url,authorization,publicKey,serverKey,env,fetchImpl,readJson,now}):null;
+      const reportPayload=unified?{workspace:unified.workspace}:expenseReport?{report:expenseReport}:taskReport?{taskReport}:{};
+      const sources = unified?unified.sources:selectedNote ? [selectedNote.source] : expenseReport ? expenseSources(expenseReport) : taskReport?taskSources(taskReport):[];
+      const system = SYSTEM + (unified?"\n\n"+unified.system:selectedNote ? "\n\n" + NOTE_SYSTEM : expenseReport ? "\n\n" + EXPENSE_SYSTEM : taskReport?"\n\n"+TASK_SYSTEM:"");
       const messages = selectedNote ? noteMessages(input.messages, selectedNote, input.context.action)
-        : expenseReport ? expenseMessages(input.messages,expenseReport,input.context.action) : input.messages;
+        : unified?unified.messages:expenseReport ? expenseMessages(input.messages,expenseReport,input.context.action) : taskReport?taskMessages(input.messages,taskReport,input.context.action):input.messages;
       const account=(env("CLOUDFLARE_ACCOUNT_ID")||"").trim(),token=(env("CLOUDFLARE_API_TOKEN")||"").trim();
       if(!/^[a-f0-9]{32}$/i.test(account)||!token||!/^[\x21-\x7E]{1,1024}$/.test(token))throw fail("AI_SERVER_CONFIG",503);
       const hash=Array.from(new Uint8Array(await cryptoImpl.subtle.digest("SHA-256",new TextEncoder().encode(JSON.stringify({model:MODEL,system,messages,context:input.context}))))).map(value=>value.toString(16).padStart(2,"0")).join("");
       const reservation=await rpc("reserve_ai_chat",{p_user_id:userId,p_request_id:requestId,p_request_hash:hash});quota=reservation?.quota;
-      if(reservation?.state==="cached")return json({requestId,reply:reservation.reply,model:MODEL,quota,cached:true,elapsedMs:reservation.elapsedMs,sources,actions:[],...(expenseReport?{report:expenseReport}:{})});
+      if(reservation?.state==="cached")return json({requestId,reply:reservation.reply,model:MODEL,quota,cached:true,elapsedMs:reservation.elapsedMs,sources,actions:[],...reportPayload});
       if(reservation?.state!=="new"){
         const code=typeof reservation?.state==="string"&&reservation.state.startsWith("AI_")?reservation.state:"AI_DATABASE_ERROR";
         if(expenseReport && code==="AI_REQUEST_CONFLICT")throw fail("AI_EXPENSE_CHANGED",409,{retryWithNewId:true});
+        if(taskReport && code==="AI_REQUEST_CONFLICT")throw fail("AI_TASK_CHANGED",409,{retryWithNewId:true});
+        if(unified && code==="AI_REQUEST_CONFLICT")throw fail("AI_WORKSPACE_CHANGED",409,{retryWithNewId:true});
         throw fail(code,["AI_IN_PROGRESS","AI_REQUEST_CONFLICT","AI_RETRY_NEW_REQUEST"].includes(code)?409:429,{retryWithNewId:code==="AI_RETRY_NEW_REQUEST"});
       }
       reserved=true;
+      if(unified?.directReply){
+        if(unified.verify)await unified.verify();
+        const direct={reply:unified.directReply,promptTokens:0,completionTokens:0};generated=true;
+        await finish("completed",direct);reserved=false;
+        return json({requestId,reply:direct.reply,model:MODEL,quota,cached:false,elapsedMs:Math.max(0,now()-started),sources,actions:[],...reportPayload});
+      }
       const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),45000),abort=()=>controller.abort();
       request.signal.addEventListener("abort",abort,{once:true});if(request.signal.aborted)abort();
       let result;
       try {
         const response=await fetchImpl(`https://api.cloudflare.com/client/v4/accounts/${account}/ai/run/${MODEL}`,{method:"POST",
           headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},
-          body:JSON.stringify({messages:[{role:"system",content:system},...messages],max_completion_tokens:selectedNote||expenseReport ? 1024 : 512,stream:false,store:false,chat_template_kwargs:{enable_thinking:false},tool_choice:"none"}),signal:controller.signal});
+          body:JSON.stringify({messages:[{role:"system",content:system},...messages],max_completion_tokens:taskReport||unified?.workspace.checked.length?1536:selectedNote||expenseReport ? 1024 : 512,stream:false,store:false,chat_template_kwargs:{enable_thinking:false},tool_choice:"none"}),signal:controller.signal});
         if(!response.ok){let payload;try{payload=await readJson(response,32768);}catch{}throw providerFailure(response.status,payload);}
         let payload;try{payload=await readJson(response,131072);}catch{throw fail("AI_INVALID_RESPONSE",502,{retryWithNewId:true});}
         if(payload?.success===false)throw providerFailure(response.status,payload);
-        result=modelReply(payload);generated=true;
+        result=modelReply(payload);
+        if(unified)result.reply=guardWorkspaceReply(result.reply,unified.workspace,input.messages.at(-1).content);
+        // Do not return references that changed/disappeared while the model was replying.
+        if(unified?.verify)await unified.verify();
+        generated=true;
       } catch(error) {
         if(controller.signal.aborted)throw fail("AI_TIMEOUT",504,{retryWithNewId:true});throw error;
       } finally {clearTimeout(timeout);request.signal.removeEventListener("abort",abort);}
       // Persist the short retry cache before acknowledging success. No second model call on retry.
       await finish("completed",result);reserved=false;
-      return json({requestId,reply:result.reply,model:MODEL,quota,cached:false,elapsedMs:Math.max(0,now()-started),sources,actions:[],...(expenseReport?{report:expenseReport}:{})});
+      return json({requestId,reply:result.reply,model:MODEL,quota,cached:false,elapsedMs:Math.max(0,now()-started),sources,actions:[],...reportPayload});
     } catch(error) {
       const code=generated?"AI_RESULT_PENDING":typeof error?.code==="string"&&error.code.startsWith("AI_")?error.code:"AI_UNAVAILABLE";
       if(reserved && !generated) {try{await finish("failed",{code});}catch{logger.error("PW AI completion ledger unavailable",{requestId,code:"AI_DATABASE_ERROR"});}}

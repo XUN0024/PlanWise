@@ -1,5 +1,6 @@
 const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
 const {PGlite}=require("@electric-sql/pglite");
+const configureDemoSql=require("./fixtures/expense-demo-config.cjs");
 const A="00000000-0000-4000-8000-000000000001",B="00000000-0000-4000-8000-000000000002";
 const db=new PGlite(),read=name=>fs.readFileSync(path.join(__dirname,"../database/",name),"utf8");
 const manifest=require("../database/seeds/20261107_expenses_demo_expected.json");
@@ -14,7 +15,7 @@ test.before(async()=>{
     GRANT USAGE ON SCHEMA public,auth TO anon,authenticated;
     CREATE TABLE expenses(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid NOT NULL REFERENCES auth.users(id),amount numeric NOT NULL,note text,category text,expense_date date,created_at timestamptz NOT NULL DEFAULT now());`);
   for(const name of ["20261106_expenses_crud.sql","20261107_expenses_payment_time.sql","20261107_expenses_assistant.sql"])await db.exec(read("migrations/"+name));
-  await db.exec(read("seeds/20261107_expenses_demo_seed.sql").replace("target_uid text := 'PASTE_USER_UID_HERE'",`target_uid text := '${A}'`));
+  await db.exec(configureDemoSql(read("seeds/20261107_expenses_demo_seed.sql"),A));
   await db.query("INSERT INTO expenses(user_id,amount,note,category,expense_date) VALUES($1,999999999999.99,$2,'Other','2026-10-02')",[B,manifest.marker+" Other account"]);
 });
 test.after(()=>db.close());

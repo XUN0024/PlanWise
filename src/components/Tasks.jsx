@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { getTasks, saveTask, updateTask, updateSubtask, deleteTask } from "../services/taskService";
+import { getTasks, getTaskById, saveTask, updateTask, updateSubtask, deleteTask } from "../services/taskService";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes, faBell, faArrowRight } from "@fortawesome/free-solid-svg-icons";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useTranslation } from "react-i18next";
 
@@ -28,7 +28,7 @@ const emptyDraft = () => ({
 });
 const controlClass = "w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500";
 
-export function TaskCard({ task, busy, onEdit, onDelete, onToggle, onToggleSub }) {
+export function TaskCard({ task, busy, onEdit, onDelete, onToggle, onToggleSub, onAsk }) {
   return (
     <article className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
       <div className="flex items-start gap-3">
@@ -52,6 +52,7 @@ export function TaskCard({ task, busy, onEdit, onDelete, onToggle, onToggleSub }
           </ul>}
         </div>
         <div className="flex gap-3 text-sm">
+          <button disabled={busy} type="button" onClick={()=>onAsk?.(task)} className="text-violet-700">PW AI</button>
           <button disabled={busy} onClick={() => onEdit(task)} className="text-blue-600">Edit</button>
           <button disabled={busy} onClick={() => onDelete(task)} className="text-red-600">Delete</button>
         </div>
@@ -123,6 +124,9 @@ export function TaskEditor({ draft, isNew, saving, error, onChange, onClose, onS
 const Tasks = () => {
   const { user, signOut } = useAuth();
   const { t } = useTranslation();
+  const location=useLocation();
+  const [sourcePreview,setSourcePreview]=useState(null),[sourceLoading,setSourceLoading]=useState(false),[sourceError,setSourceError]=useState(false),[sourceAttempt,setSourceAttempt]=useState(0);
+  const sourceRef=useRef(null);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -146,6 +150,18 @@ const Tasks = () => {
   const operationRef = useRef(null);
   const currentUser = useRef(user?.id);
   currentUser.current = user?.id;
+
+  useEffect(()=>{
+    let cancelled=false;
+    const id=new URLSearchParams(location.search).get("task"),userId=user?.id;
+    setSourcePreview(null);setSourceError(false);setSourceLoading(!!id&&!!userId);
+    if(id&&userId)getTaskById(id,userId).then(row=>{
+      if(!cancelled&&currentUser.current===userId)setSourcePreview(formatTaskForUI(row));
+    }).catch(()=>{if(!cancelled&&currentUser.current===userId)setSourceError(true);})
+      .finally(()=>{if(!cancelled&&currentUser.current===userId)setSourceLoading(false);});
+    return()=>{cancelled=true;};
+  },[user?.id,location.search,location.key,sourceAttempt]);
+  useEffect(()=>{if(sourcePreview&&!draft){sourceRef.current?.scrollIntoView?.({block:"start"});sourceRef.current?.focus?.();}},[sourcePreview,draft]);
 
   useEffect(() => {
     let cancelled = false;
@@ -501,6 +517,7 @@ const Tasks = () => {
   const incompleteTasks = matching.filter((task) => !task.isCompleted);
   const completedTasks = matching.filter((task) => task.isCompleted);
   const card = (task) => <TaskCard key={task.id} task={task} busy={saving || !!draft || !!deletingTask}
+    onAsk={value=>window.dispatchEvent(new CustomEvent("planwise:ask",{detail:{userId:user.id,title:value.title,reference:{type:"tasks",taskId:value.id,status:"all",priority:"",search:"",from:"",to:""}}}))}
     onEdit={openEditor} onToggle={handleToggle} onToggleSub={handleToggleSub}
     onDelete={(value) => { setError(null); setDeletingTask(value); }} />;
 
@@ -583,6 +600,16 @@ const Tasks = () => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">All Tasks</h1>
+        {sourceLoading&&<p role="status" className="mb-4 text-sm text-gray-500">{t("askPlanwise.tasks.loading")}</p>}
+        {sourceError&&<div role="alert" className="mb-4 rounded-xl bg-red-50 p-4 text-sm text-red-700"><p>{t("askPlanwise.tasks.sourceUnavailable")}</p><button type="button" onClick={()=>setSourceAttempt(value=>value+1)} className="underline mt-2">{t("askPlanwise.retry")}</button></div>}
+        {sourcePreview&&<section ref={sourceRef} tabIndex={-1} aria-label={t("askPlanwise.tasks.sourceTitle")} className="mb-6 rounded-xl border border-violet-200 bg-violet-50 p-4 space-y-2">
+          <div className="flex justify-between gap-3"><h2 className="font-semibold text-violet-900">{t("askPlanwise.tasks.sourceTitle")}</h2><button type="button" aria-label={t("askPlanwise.tasks.closeSource")} onClick={()=>setSourcePreview(null)} className="text-sm text-violet-700">✕</button></div>
+          <h3 className="font-medium break-words">{sourcePreview.title}</h3>
+          <p className="text-sm">{t(sourcePreview.isCompleted?"askPlanwise.tasks.done":"askPlanwise.tasks.unfinished")} · {t("askPlanwise.tasks.priority."+sourcePreview.priority)}</p>
+          {sourcePreview.description&&<p className="whitespace-pre-wrap break-words text-sm">{sourcePreview.description}</p>}
+          {sourcePreview.reminderDate&&<p className="text-xs text-gray-600">{t("askPlanwise.tasks.reminder")}: {sourcePreview.reminderDate} {sourcePreview.reminderClock.slice(0,5)}</p>}
+          <ul className="text-sm space-y-1">{sourcePreview.subtasks.map(sub=><li key={sub.id} className="break-words">{sub.isCompleted?"✓":"○"} {sub.title} · {t(sub.isCompleted?"askPlanwise.tasks.done":"askPlanwise.tasks.unfinished")}</li>)}</ul>
+        </section>}
         {error && !draft && !deletingTask && <div role="alert" className="mb-4 p-4 rounded-lg bg-red-50 text-red-700">
           <p>{error}</p>
           <button disabled={saving} onClick={() => setReload((value) => value + 1)} className="underline mt-2">Reload tasks</button>

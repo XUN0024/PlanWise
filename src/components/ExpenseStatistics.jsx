@@ -60,6 +60,7 @@ function Trend({ data }) {
     </details>
   </>;
 }
+export { Trend as ExpenseTrend };
 export default function ExpenseStatistics({ data, loading, error, granularity, onGranularityChange, onRetry, disabled }) {
   const { t } = useTranslation();
   return <section aria-label={t("expensesPanel.statistics.title")} className="mb-8">

@@ -1,23 +1,67 @@
 const test=require("node:test"),assert=require("node:assert/strict"),{randomUUID,webcrypto}=require("node:crypto");
 const A="00000000-0000-4000-8000-000000000001",quota={dailyLimit:20,dailyRemaining:19,resetAt:"2026-11-08T00:00:00Z"};
 const expenseFixture=require("./fixtures/expense-insight.cjs");
+const taskFixture=require("./fixtures/task-insight.cjs");
 let api;test.before(async()=>{api=await import("../supabase/functions/ask-planwise/handler.mjs");});
 function fixture(){
   const env={SUPABASE_URL:"https://test.supabase.co",SUPABASE_ANON_KEY:"public-key",SUPABASE_SERVICE_ROLE_KEY:"private-service-key",CLOUDFLARE_ACCOUNT_ID:"a".repeat(32),CLOUDFLARE_API_TOKEN:"private-cloudflare-token"};
-  const calls=[],logs=[];let reserve={state:"new",quota},provider={result:{choices:[{message:{content:"你好！"}}],usage:{prompt_tokens:20,completion_tokens:3}},success:true},status=200,finishFails=false,authStatus=200,authUser={id:A},providerFetch,noteRows=[],noteStatus=200,expenseReport=expenseFixture.report(),expenseStatus=200;
+  const calls=[],logs=[];let reserve={state:"new",quota},provider={result:{choices:[{message:{content:"你好！"}}],usage:{prompt_tokens:20,completion_tokens:3}},success:true},status=200,finishFails=false,authStatus=200,authUser={id:A},providerFetch,noteRows=[],noteStatus=200,expenseReport=expenseFixture.report(),expenseStatus=200,taskReport=taskFixture.report(),taskStatus=200;
   const handler=api.createChatHandler({env:key=>env[key],cryptoImpl:webcrypto,now:()=>Date.parse("2026-11-07T04:00:00Z"),logger:{warn:(...value)=>logs.push(value),error:(...value)=>logs.push(value)},fetchImpl:async(url,options={})=>{
     calls.push({url,options,body:options.body?JSON.parse(options.body):null});
     if(url.endsWith("/auth/v1/user"))return Response.json(authUser,{status:authStatus});
     if(new URL(url).pathname==="/rest/v1/notes")return Response.json(noteRows,{status:noteStatus});
     if(url.endsWith("/get_expense_insights"))return Response.json(expenseReport,{status:expenseStatus});
+    if(url.endsWith("/get_task_insights"))return Response.json(taskReport,{status:taskStatus});
     if(url.endsWith("/reserve_ai_chat"))return Response.json(reserve);
     if(url.endsWith("/finish_ai_chat")){if(finishFails)throw Error("private-service-key failure");return new Response(null,{status:204});}
     return providerFetch?providerFetch(options):Response.json(provider,{status});
   }});
-  return{handler,calls,logs,env,setReserve:value=>reserve=value,setProvider:(value,code=200)=>{provider=value;status=code;},setFinishFailure:()=>finishFails=true,setAuthStatus:value=>authStatus=value,setAuthUser:value=>authUser=value,setProviderFetch:value=>providerFetch=value,setNotes:(value,code=200)=>{noteRows=value;noteStatus=code;},setExpenses:(value,code=200)=>{expenseReport=value;expenseStatus=code;}};
+  return{handler,calls,logs,env,setReserve:value=>reserve=value,setProvider:(value,code=200)=>{provider=value;status=code;},setFinishFailure:()=>finishFails=true,setAuthStatus:value=>authStatus=value,setAuthUser:value=>authUser=value,setProviderFetch:value=>providerFetch=value,setNotes:(value,code=200)=>{noteRows=value;noteStatus=code;},setExpenses:(value,code=200)=>{expenseReport=value;expenseStatus=code;},setTasks:(value,code=200)=>{taskReport=value;taskStatus=code;}};
 }
 const body=()=>({requestId:randomUUID(),messages:[{role:"user",content:"你好，请介绍你自己。"}]});
 const request=(data=body(),extra={})=>new Request("https://test.supabase.co/functions/v1/ask-planwise",{method:"POST",headers:{Authorization:"Bearer user-session-jwt","Content-Type":"application/json",Origin:"http://localhost:3000",...extra.headers},body:JSON.stringify(data),...extra});
+
+test("tasks focus uses only caller-scoped read RPC and verified task sources, with reminder and preview boundaries",async()=>{
+  const f=fixture(),input={...body(),context:taskFixture.context()},response=await f.handler(request(input)),data=await response.json();
+  assert.equal(response.status,200);assert.equal(data.taskReport.owner_id,undefined);assert.equal(data.taskReport.summary.incomplete,1);
+  assert.deepEqual(data.sources,[{type:"task",id:taskFixture.TASK,title:"Prepare project presentation",version:"b".repeat(32)}]);assert.deepEqual(data.actions,[]);
+  const read=f.calls.find(call=>call.url.endsWith("/get_task_insights"));assert.deepEqual(read.body,{p_task_id:null,p_as_of:"2026-11-07"});assert.equal(read.options.headers.Authorization,"Bearer user-session-jwt");assert.equal(read.options.headers.apikey,"public-key");
+  const model=f.calls.find(call=>call.url.startsWith("https://api.cloudflare.com")),facts=JSON.parse(model.body.messages.at(-1).content).verified_task_report;
+  assert.equal(facts.tasks[0].subtasks[0].is_completed,true);assert.equal(facts.tasks[0].subtasks[1].is_completed,false);
+  assert.match(model.body.messages[0].content,/reminders, NOT deadlines/);assert.match(model.body.messages[0].content,/untrusted data/);assert.match(model.body.messages[0].content,/Never create, edit, complete, delete/);assert.equal(model.body.tools,undefined);
+  assert.equal(f.calls.some(call=>/get_expense_insights|\/rest\/v1\/notes$/.test(call.url)),false);
+});
+test("selected task breakdown preserves existing progress and never invents persisted operations",async()=>{
+  const f=fixture();f.setTasks(taskFixture.report(true));const context=taskFixture.context({action:"breakdown",taskId:taskFixture.TASK});
+  const data=await(await f.handler(request({...body(),context}))).json();assert.equal(data.taskReport.scope.task_id,taskFixture.TASK);
+  const model=f.calls.find(call=>call.url.startsWith("https://api.cloudflare.com")),last=JSON.parse(model.body.messages.at(-1).content);
+  assert.match(last.task,/without saving changes/);assert.match(model.body.messages[0].content,/Reuse unfinished subtasks rather than repeating them/);
+  assert.deepEqual(data.actions,[]);assert.ok(f.calls.every(call=>!call.url.includes("/rest/v1/tasks")&&!call.url.includes("/rest/v1/subtasks")));
+});
+test("invalid/foreign/missing/oversized task scopes fail before quota reservation and task text is never logged",async()=>{
+  for(const extra of [{taskId:taskFixture.TASK},{action:"breakdown",taskId:null},{taskId:null,user_id:A},{action:"delete"}]){
+    const f=fixture(),data=await(await f.handler(request({...body(),context:{...taskFixture.context(),...extra}}))).json();assert.equal(data.code,"AI_TASK_INPUT_INVALID");assert.equal(f.calls.some(call=>call.url.endsWith("/reserve_ai_chat")),false);
+  }
+  for(const mode of ["foreign","missing","empty","large","badDate","invalidCounts"]){
+    const f=fixture(),selected=["empty","large"].includes(mode),report=taskFixture.report(selected),context=taskFixture.context(selected?{action:"breakdown",taskId:taskFixture.TASK}:{});
+    if(mode==="foreign")report.owner_id=taskFixture.TASK;
+    if(mode==="empty"){report.tasks=[];for(const key of Object.keys(report.summary))report.summary[key]=0;}
+    if(mode==="large")report.tasks[0].text_truncated=true;
+    if(mode==="badDate")report.as_of="2026-11-06";
+    if(mode==="invalidCounts")report.summary.incomplete=10;
+    f.setTasks(report,mode==="missing"?404:200);const data=await(await f.handler(request({...body(),context}))).json();
+    assert.equal(data.code,mode==="missing"?"AI_TASK_SETUP_REQUIRED":mode==="empty"?"AI_TASK_UNAVAILABLE":mode==="large"?"AI_TASK_TOO_LONG":"AI_TASK_DATA_INVALID");
+    assert.equal(f.calls.some(call=>call.url.endsWith("/reserve_ai_chat")),false);assert.equal(JSON.stringify(f.logs).includes("Prepare project presentation"),false);
+  }
+});
+test("task retries reread authorization and contents, cache sources safely, and request a new id when data changed",async()=>{
+  const f=fixture();f.setReserve({state:"cached",reply:"Cached task plan",quota});const context=taskFixture.context();
+  let data=await(await f.handler(request({...body(),context}))).json();assert.equal(data.cached,true);assert.equal(data.sources[0].type,"task");assert.equal(f.calls.some(call=>call.url.startsWith("https://api.cloudflare.com")),false);
+  f.setReserve({state:"AI_REQUEST_CONFLICT",quota});data=await(await f.handler(request({...body(),context}))).json();assert.equal(data.code,"AI_TASK_CHANGED");assert.equal(data.retryWithNewId,true);
+  const hashes=[];for(const version of ["c","d"]){const next=fixture(),report=taskFixture.report();report.data_version=version.repeat(32);next.setTasks(report);await next.handler(request({...body(),context}));hashes.push(next.calls.find(call=>call.url.endsWith("/reserve_ai_chat")).body.p_request_hash);}
+  assert.notEqual(hashes[0],hashes[1]);
+  const normal=fixture();await normal.handler(request());assert.equal(normal.calls.some(call=>call.url.endsWith("/get_task_insights")),false);
+});
 test("authenticated calls use fixed GLM endpoint, server system prompt, bounded completion and isolated credentials",async()=>{
   const f=fixture(),input=body(),response=await f.handler(request(input)),data=await response.json();assert.equal(response.status,200);assert.equal(data.reply,"你好！");assert.equal(data.requestId,input.requestId);assert.deepEqual(data.sources,[]);
   const auth=f.calls[0];assert.equal(auth.options.headers.Authorization,"Bearer user-session-jwt");assert.equal(auth.options.headers.apikey,"public-key");

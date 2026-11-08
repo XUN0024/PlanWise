@@ -1,11 +1,12 @@
 const test = require("node:test"), assert = require("node:assert/strict"), fs = require("node:fs"), path = require("node:path");
 const { PGlite } = require("@electric-sql/pglite");
 const { BATCH, MARKER, manifest, artifacts } = require("../scripts/generate-expense-demo.cjs");
+const configureDemoSql=require("./fixtures/expense-demo-config.cjs");
 const db = new PGlite();
 const A="00000000-0000-4000-8000-000000000001", B="00000000-0000-4000-8000-000000000002", MISSING="00000000-0000-4000-8000-000000000003";
 const REAL="10000000-0000-4000-8000-000000000001";
 const read=(name)=>fs.readFileSync(path.join(__dirname,"../database/",name),"utf8");
-const script=(name,user=A)=>read(`seeds/20261107_expenses_demo_${name}.sql`).replace("target_uid text := 'PASTE_USER_UID_HERE'",`target_uid text := '${user}'`);
+const script=(name,user=A)=>configureDemoSql(read(`seeds/20261107_expenses_demo_${name}.sql`),user);
 const rollback=()=>db.exec("ROLLBACK;");
 async function asUser(user,sql,args=[]){
   await db.exec("BEGIN; SET LOCAL ROLE authenticated;");
@@ -27,7 +28,10 @@ test.before(async()=>{
 test.after(()=>db.close());
 
 test("generated artifacts are reproducible and the frozen historical fixture satisfies the test coverage contract",()=>{
-  for(const [file,content] of Object.entries(artifacts))assert.equal(fs.readFileSync(file,"utf8").replace(/\r\n/g,"\n"),content);
+  for(const [file,content] of Object.entries(artifacts)){
+    const actual=fs.readFileSync(file,"utf8").replace(/\r\n/g,"\n");
+    assert.equal(file.endsWith(".sql")?configureDemoSql(actual):actual,content);
+  }
   assert.equal(manifest.rowCount,256);assert.equal(manifest.totals.total_cents,"1448064");
   assert.equal(manifest.largest.amount,"2499.00");assert.equal(manifest.comparison.octoberVsSeptember.delta_cents,"193532");
   assert.equal(new Set(manifest.records.map(row=>row.category)).size,7);
@@ -37,7 +41,7 @@ test("generated artifacts are reproducible and the frozen historical fixture sat
   assert.ok(manifest.records.every(row=>row.expense_date<manifest.asOf&&row.created_at.startsWith(manifest.asOf)));
 });
 test("missing or wrong-project user UID fails before inserting anything",async()=>{
-  await assert.rejects(db.exec(read("seeds/20261107_expenses_demo_seed.sql")),/DEMO_TARGET_UID_REQUIRED/);await rollback();
+  await assert.rejects(db.exec(script("seed","PASTE_USER_UID_HERE")),/DEMO_TARGET_UID_REQUIRED/);await rollback();
   await assert.rejects(db.exec(script("seed",MISSING)),/DEMO_TARGET_USER_NOT_FOUND/);await rollback();
   assert.equal((await db.query("SELECT count(*)::integer AS n FROM expenses")).rows[0].n,1);
 });

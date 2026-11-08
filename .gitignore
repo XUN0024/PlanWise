@@ -22,3 +22,5 @@ auth.json
 /dist/
 supabase/.temp/
 supabase/functions/.env*
+.pw-*-cursor.json
+retrieval-eval.local.json

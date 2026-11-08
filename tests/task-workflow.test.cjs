@@ -21,7 +21,7 @@ function load(relativePath, imports) {
     },
     console: { log() {}, error() {} },
     crypto: require("node:crypto").webcrypto,
-    setTimeout, clearTimeout,
+    setTimeout, clearTimeout, URLSearchParams,
     cancelAnimationFrame() {},
   }, { filename });
   return module.exports;
@@ -39,8 +39,36 @@ const deferred = () => {
 const tick = () => new Promise(setImmediate);
 const submitEvent = { preventDefault() {} };
 
+test("task source links read an owned record outside the visible list without modifying a pending editor draft",async()=>{
+  const pending=deferred(),reads=[],app=workflow({getTaskById:(id,userId)=>{reads.push([id,userId]);return pending.promise;}});
+  app.render();await app.flush();app.cards()[0].props.onEdit(app.cards()[0].props.task);app.render();app.editor().props.onChange({title:"Keep my unsaved draft"});app.render();
+  const sourceId="00000000-0000-4000-8000-000000000099";app.setLocation({search:"?task="+sourceId,key:"source"});
+  pending.resolve(dbTask({id:sourceId,title:"Source task outside the list"}));await app.flush();
+  assert.deepEqual(reads,[[sourceId,"user-a"]]);assert.equal(app.sources().length,1);assert.equal(app.editor().props.draft.title,"Keep my unsaved draft");assert.equal(app.calls.length,0);
+  app.unmount();
+});
+
+test("late task source reads cannot reveal the previous account's records; unavailable sources show an error",async()=>{
+  const pending=deferred(),app=workflow({getTaskById:()=>pending.promise});app.render();await app.flush();app.setLocation({search:"?task=source",key:"source"});app.setUser(null);
+  pending.resolve(dbTask({title:"Old-account private source"}));await app.flush();assert.equal(app.sources().length,0);app.unmount();
+  const missing=workflow({getTaskById:async()=>{throw Error("Unavailable");}});missing.render();await missing.flush();missing.setLocation({search:"?task=missing",key:"missing"});await missing.flush();assert.equal(missing.sources().length,0);assert.ok(missing.alerts().length);missing.unmount();
+});
+
+test("task context catalog is owner-scoped, bounded, literal-searchable and cancellation-aware; mismatched sessions cannot read",async()=>{
+  const calls=[],rows=Array.from({length:31},(_,index)=>({id:String(index),title:"Task "+index}));let sessionUser="user-a";
+  const query={then:resolve=>Promise.resolve({data:rows,error:null}).then(resolve),maybeSingle:async()=>({data:dbTask(),error:null})};
+  for(const method of ["select","eq","order","limit","ilike","abortSignal"])query[method]=(...args)=>{calls.push([method,...args]);return query;};
+  const supabase={auth:{getSession:async()=>({data:{session:{user:{id:sessionUser}}}})},from:name=>{calls.push(["from",name]);return query;}};
+  const service=load("src/services/taskService.jsx",{"../lib/supabase":{supabase}}),controller=new AbortController();
+  const result=await service.getTaskChoices("user-a","50%_done",controller.signal);assert.equal(result.tasks.length,30);assert.equal(result.hasMore,true);assert.ok(calls.some(call=>call[0]==="eq"&&call[1]==="user_id"&&call[2]==="user-a"));
+  assert.ok(calls.some(call=>call[0]==="ilike"&&call[2]==="%50\\%\\_done%"));assert.ok(calls.some(call=>call[0]==="abortSignal"&&call[1]===controller.signal));
+  await service.getTaskById("00000000-0000-4000-8000-000000000099","user-a");assert.ok(calls.some(call=>call[0]==="eq"&&call[1]==="id"));
+  sessionUser="user-b";const before=calls.length;await assert.rejects(service.getTaskChoices("user-a"),error=>error.code==="AI_AUTH_REQUIRED");assert.equal(calls.length,before);
+});
+
 function workflow(serviceOverrides = {}) {
   let user = { id: "user-a", email: "a@example.com" };
+  let location={search:"",key:"test"};
   let slots = [], cursor = 0, dirty = true, tree, effects = [];
   const calls = [];
   const react = {
@@ -87,7 +115,7 @@ function workflow(serviceOverrides = {}) {
     "../services/taskService": services,
     "@fortawesome/react-fontawesome": { FontAwesomeIcon: "icon" },
     "@fortawesome/free-solid-svg-icons": {},
-    "react-router-dom": { Link: "a" },
+    "react-router-dom": { Link: "a",useLocation:()=>location },
     "./LanguageSwitcher": { __esModule: true, default: "language-switcher" },
     "react-i18next": { useTranslation: () => ({ t: (key) => key }) },
   });
@@ -114,6 +142,8 @@ function workflow(serviceOverrides = {}) {
     editor: () => all((node) => node.type === components.TaskEditor)[0],
     button: (text) => all((node) => node.type === "button" && node.props.children.flat(Infinity).includes(text))[0],
     alerts: () => all((node) => node.props?.role === "alert"),
+    sources: () => all((node) => node.props?.["aria-label"] === "askPlanwise.tasks.sourceTitle"),
+    setLocation(value) { location=value;render(); },
     setUser(value) { user = value; render(); },
     unmount() { slots.forEach((slot) => slot?.cleanup?.()); },
   };

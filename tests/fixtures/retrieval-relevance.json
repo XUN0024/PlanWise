@@ -1,0 +1,24 @@
+{
+  "description": "Fictional, repeatable relevance fixtures. Real-model quality must be measured live; unit test vectors prove mechanics only.",
+  "records": [
+    {"id":"note-tai","kind":"note","text":"课堂随记\nTAI CS401: artificial intelligence course presentation. 准备课堂汇报，讨论神经网络和模型评估。"},
+    {"id":"note-memory","kind":"note","text":"生活记录\n复习要间隔进行，多次回想比反复阅读更有助于长期记忆。"},
+    {"id":"note-cook","kind":"note","text":"Weekend ideas\nBake sourdough bread and cook noodles."},
+    {"id":"task-presentation","kind":"task","text":"课程项目\n子任务：整理 TAI CS401 slides，排练 presentation，检查投影设备。"},
+    {"id":"task-health","kind":"task","text":"Personal care\nBook a dental appointment for tooth cleaning."},
+    {"id":"expense-travel","kind":"expense","text":"Grab ride to campus\nTransport"},
+    {"id":"expense-subscription","kind":"expense","text":"Netflix monthly renewal\nEntertainment"},
+    {"id":"expense-lunch","kind":"expense","text":"校园食堂午餐\nFood"}
+  ],
+  "queries": [
+    {"id":"exact-code","kind":"note","query":"Find my TAI CS401 notes","expected":["note-tai"]},
+    {"id":"zh-body","kind":"note","query":"找关于长期记忆的笔记","expected":["note-memory"]},
+    {"id":"en-synonym","kind":"note","query":"Find notes about retaining what I learn","expected":["note-memory"]},
+    {"id":"mixed","kind":"note","query":"TAI 课堂 presentation requirements","expected":["note-tai"]},
+    {"id":"task-child","kind":"task","query":"Find tasks for rehearsing the class talk","expected":["task-presentation"]},
+    {"id":"task-zh-synonym","kind":"task","query":"找有关口腔保健的任务","expected":["task-health"]},
+    {"id":"expense-synonym","kind":"expense","query":"Find expenses for getting around","expected":["expense-travel"]},
+    {"id":"expense-zh-synonym","kind":"expense","query":"找视频会员续费的支出","expected":["expense-subscription"]},
+    {"id":"expense-mixed","kind":"expense","query":"campus 食堂 lunch expenses","expected":["expense-lunch"]}
+  ]
+}

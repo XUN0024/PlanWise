@@ -1,0 +1,189 @@
+{
+  "description": "Observed Cloudflare BGE-M3 cosine scores from the 2026-11-08 real-provider benchmark. Used only for deterministic ranking regressions, not a fresh model call or a production accuracy estimate.",
+  "model": "@cf/baai/bge-m3",
+  "dimensions": 1024,
+  "at": "2026-11-08T11:18:23.227Z",
+  "cases": [
+    {
+      "id": "exact-code",
+      "query": "Find my TAI CS401 notes",
+      "expected": [
+        "note-tai"
+      ],
+      "cosines": [
+        {
+          "id": "note-tai",
+          "similarity": 0.569280182575293
+        },
+        {
+          "id": "note-memory",
+          "similarity": 0.39409833304572744
+        },
+        {
+          "id": "note-cook",
+          "similarity": 0.2769918504609087
+        }
+      ]
+    },
+    {
+      "id": "zh-body",
+      "query": "找关于长期记忆的笔记",
+      "expected": [
+        "note-memory"
+      ],
+      "cosines": [
+        {
+          "id": "note-tai",
+          "similarity": 0.4354740658289922
+        },
+        {
+          "id": "note-memory",
+          "similarity": 0.6281189096595082
+        },
+        {
+          "id": "note-cook",
+          "similarity": 0.3321540445951795
+        }
+      ]
+    },
+    {
+      "id": "en-synonym",
+      "query": "Find notes about retaining what I learn",
+      "expected": [
+        "note-memory"
+      ],
+      "cosines": [
+        {
+          "id": "note-tai",
+          "similarity": 0.5115528066743374
+        },
+        {
+          "id": "note-memory",
+          "similarity": 0.5627492784691173
+        },
+        {
+          "id": "note-cook",
+          "similarity": 0.3944949867199231
+        }
+      ]
+    },
+    {
+      "id": "mixed",
+      "query": "TAI 课堂 presentation requirements",
+      "expected": [
+        "note-tai"
+      ],
+      "cosines": [
+        {
+          "id": "note-tai",
+          "similarity": 0.6237780291139138
+        },
+        {
+          "id": "note-memory",
+          "similarity": 0.37002410639568584
+        },
+        {
+          "id": "note-cook",
+          "similarity": 0.24324992915231758
+        }
+      ]
+    },
+    {
+      "id": "task-child",
+      "query": "Find tasks for rehearsing the class talk",
+      "expected": [
+        "task-presentation"
+      ],
+      "cosines": [
+        {
+          "id": "task-presentation",
+          "similarity": 0.597524367654806
+        },
+        {
+          "id": "task-health",
+          "similarity": 0.4649856448575963
+        }
+      ]
+    },
+    {
+      "id": "task-zh-synonym",
+      "query": "找有关口腔保健的任务",
+      "expected": [
+        "task-health"
+      ],
+      "cosines": [
+        {
+          "id": "task-presentation",
+          "similarity": 0.5180650367542821
+        },
+        {
+          "id": "task-health",
+          "similarity": 0.6222573250392901
+        }
+      ]
+    },
+    {
+      "id": "expense-synonym",
+      "query": "Find expenses for getting around",
+      "expected": [
+        "expense-travel"
+      ],
+      "cosines": [
+        {
+          "id": "expense-travel",
+          "similarity": 0.5404171495832344
+        },
+        {
+          "id": "expense-subscription",
+          "similarity": 0.3887615912377196
+        },
+        {
+          "id": "expense-lunch",
+          "similarity": 0.44496417325276416
+        }
+      ]
+    },
+    {
+      "id": "expense-zh-synonym",
+      "query": "找视频会员续费的支出",
+      "expected": [
+        "expense-subscription"
+      ],
+      "cosines": [
+        {
+          "id": "expense-travel",
+          "similarity": 0.3487906920811243
+        },
+        {
+          "id": "expense-subscription",
+          "similarity": 0.5857339299857116
+        },
+        {
+          "id": "expense-lunch",
+          "similarity": 0.3646933717771406
+        }
+      ]
+    },
+    {
+      "id": "expense-mixed",
+      "query": "campus 食堂 lunch expenses",
+      "expected": [
+        "expense-lunch"
+      ],
+      "cosines": [
+        {
+          "id": "expense-travel",
+          "similarity": 0.4956181147498445
+        },
+        {
+          "id": "expense-subscription",
+          "similarity": 0.3859004844003889
+        },
+        {
+          "id": "expense-lunch",
+          "similarity": 0.7349395740633602
+        }
+      ]
+    }
+  ]
+}

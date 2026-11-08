@@ -1,8 +1,10 @@
 # PW AI：Cloudflare Workers AI 第一阶段
 
-更新：2026-11-07，Asia/Kuala_Lumpur。
+更新：2026-11-08，Asia/Kuala_Lumpur。
 
 ## 当前状态
+
+2026-11-08：前端已统一为一条聊天和“参考范围”协议，旧模块 Tab 已移除。当前入口、查询方式和上线步骤以 [统一聊天说明](./UNIFIED_AI_SETUP.md) 为准；下方保留各底层能力的实现与历史部署记录。
 
 - [x] 用户截图确认 Supabase 自定义 Secrets 中已有 CLOUDFLARE_API_TOKEN、CLOUDFLARE_ACCOUNT_ID；没有读取它们的值。
 - [x] 固定接入 @cf/zai-org/glm-4.7-flash，服务端 REST 调用；前端不会收到 Cloudflare 或 Supabase 管理密钥。
@@ -16,7 +18,9 @@
 - [x] 笔记助手总结/问答代码：按当前用户权限读取指定笔记，检查版本、转换富文本和清单、显示来源；自动保存后再发送，隔离每篇笔记/版本的对话。
 - [x] 用户已确认 Note Assistant 完成；笔记内待办提取仍另行实施。
 - [x] Expenses Assistant 第一版代码：独立 Tab，消费回顾、期间变化和账单来源；新增 SQL、函数部署与线上模型验收见 [支出助手说明](./EXPENSES_ASSISTANT_SETUP.md)。
-- [ ] Tasks Assistant、统一 RAG 入口、跨模块来源、操作预览确认、Groq 故障切换。
+- [x] Tasks Assistant 第一版代码：独立 Tab、今日重点建议、指定任务拆解预览和任务来源；新增 SQL、部署与验收见 [任务助手说明](./TASKS_ASSISTANT_SETUP.md)。
+- [x] 统一聊天、参考范围、组合来源及笔记关键词检索代码。
+- [ ] 语义 RAG、本地目录连接/索引、语音后端、操作预览确认、Groq 故障切换。
 
 ## 笔记助手总结与问答（2026-11-07）
 
@@ -59,7 +63,7 @@ npx.cmd supabase@latest functions deploy ask-planwise --use-api --remote=lfvlxzj
 npx.cmd supabase@latest --workdir "C:\Users\jiaxu\PlanWise" functions deploy ask-planwise --use-api --remote=lfvlxzjspvfxbnkdunay
 ```
 
-检查三个文件均有 Uploading asset 记录，并以 Deployed Functions 成功行作为部署完成依据。若绝对 Test-Path 为 False，先核对终端是否使用了同一台机器/项目副本，不能用空入口文件覆盖现有代码。此次错误不需要重跑 SQL 或更改 Cloudflare Secrets。
+检查入口及其全部导入依赖均有 Uploading asset 记录，并以 Deployed Functions 成功行作为部署完成依据。若绝对 Test-Path 为 False，先核对终端是否使用了同一台机器/项目副本，不能用空入口文件覆盖现有代码。入口找不到不需要重跑 SQL 或更改 Cloudflare Secrets。
 
 ## 现在如何上线并测试
 
@@ -95,8 +99,15 @@ CLI 3 使用 `--remote=<ref>` 指定项目；`--project-ref` 当前仍可用，�
 - `note-context.mjs`：[笔记解析与上下文](../supabase/functions/ask-planwise/note-context.mjs)
 - `expense-context.mjs`：[支出查询与模型上下文](../supabase/functions/ask-planwise/expense-context.mjs)
 - `expense-report.mjs`：[支出报告校验与数据规则](../supabase/functions/ask-planwise/expense-report.mjs)
+- `task-context.mjs`：[任务读取与模型上下文](../supabase/functions/ask-planwise/task-context.mjs)
+- `task-report.mjs`：[任务范围、报告与来源校验](../supabase/functions/ask-planwise/task-report.mjs)
+- `workspace-context.mjs`：[统一路由与资料读取](../supabase/functions/ask-planwise/workspace-context.mjs)
+- `workspace-report.mjs`：[统一参考协议与结果校验](../supabase/functions/ask-planwise/workspace-report.mjs)
+- `expense-range.mjs`：[支出日期范围和报表校验](../supabase/functions/ask-planwise/expense-range.mjs)
+- `expense-query.mjs`：[中英文期间识别](../supabase/functions/ask-planwise/expense-query.mjs)
+- `expense-range-context.mjs`：[区间读取与回答校验](../supabase/functions/ask-planwise/expense-range-context.mjs)
 
-当前五个文件放在同一级；不要只复制 index.ts 而遗漏其依赖文件。支出助手还需要先执行新增只读 SQL，详见支出助手说明。
+当前十二个文件放在同一级；不要只复制 index.ts 而遗漏导入依赖。统一参考、支出和任务查询分别需要对应 SQL，详见统一聊天说明。
 
 ### 3. 核对服务端环境变量
 
@@ -225,7 +236,7 @@ npx.cmd supabase@latest projects list
 
 - 看不到 `lfvlxzjspvfxbnkdunay`：核对 Dashboard 项目引用、CLI 登录账号和 Token 允许访问的项目范围。
 - 能看到但部署 403：核对 Supabase PAT 的 Edge Functions Read-write 权限，以及成员在该项目的函数管理权限。
-- 账号和权限均确认正确但 CLI 仍失败：可使用同一账号在 Dashboard 的 Edge Functions 编辑器部署当前三个文件，以区分 CLI 凭据/调用问题与项目权限问题。
+- 账号和权限均确认正确但 CLI 仍失败：可使用同一账号在 Dashboard 的 Edge Functions 编辑器部署当前七个文件，以区分 CLI 凭据/调用问题与项目权限问题。
 
 `supabase login` 的浏览器登录使用 Supabase 管理账号。它与 PlanWise Google 登录、Cloudflare API Token 都不同。
 如需更换 CLI 账号，可执行 logout 后重新 login，并在浏览器选择能管理该项目的 Supabase 账号。
@@ -280,7 +291,8 @@ npx.cmd supabase@latest projects list
 - [x] 用户 CLI 输出确认两个函数文件上传并成功部署到目标项目。
 - [x] 用户确认线上普通聊天回复成功。
 - [ ] 新版身份提示词重新部署与回答验收，中文延迟及 Neurons 消耗、线上多用户同时请求、生产域名/Electron 验收。
-- [ ] 当前笔记读取，随后任务/支出数据库查询、文件提取与 RAG；业务数据继续按当前用户 RLS 读取。
+- [x] 笔记读取及任务/支出助手第一版代码，业务数据按当前用户 RLS 读取；各自上线步骤与验收见对应说明。
+- [ ] 文件提取、统一 RAG、完整任务查询及跨任务进度分析。
 - [ ] 操作助手必须先展示可确认的业务操作预览，不能直接执行模型生成的 SQL 或工具调用。
 
 代理没有读取线上 Secrets 的值、执行线上 SQL 或调用真实模型。用户已通过本机 CLI 成功部署，并确认普通聊天可用；后续身份提示词调整和业务接入仍分别验收。
@@ -298,3 +310,7 @@ npx.cmd supabase@latest projects list
 - [Supabase CLI v3 参数迁移](https://supabase.com/docs/guides/local-development/cli/migrating-to-v3)
 - [Supabase 个人访问 Token 权限及优先级](https://supabase.com/docs/guides/platform/personal-access-tokens)
 - [部署接口所需 Edge Functions 权限](https://supabase.com/docs/reference/api/v1-deploy-a-function)
+
+## 三模块混合检索补充
+
+Notes、Tasks、Expenses 的统一混合检索、后台索引和上线顺序已另行实现。请参阅 [HYBRID_RETRIEVAL_SETUP.md](HYBRID_RETRIEVAL_SETUP.md)，先执行增量迁移和模型验证，再启用功能开关；本地实现不代表线上已部署。

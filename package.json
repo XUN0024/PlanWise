@@ -31,6 +31,7 @@
     "@babel/preset-env": "^7.28.0",
     "@babel/preset-react": "^7.27.1",
     "@electric-sql/pglite": "^0.5.15",
+    "@electric-sql/pglite-pgvector": "^0.0.16",
     "assert": "^2.1.0",
     "autoprefixer": "^10.4.21",
     "babel-loader": "^10.0.0",
